@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Datei:       activity_main.xml
+    Projekt:     Logbot
+    Autor:       Phydran6
+    Version:     1.0 - 05.04.2026.15.44.55
+
+    Beschreibung:
+    Haupt-Layout der App. Enthält ausschließlich eine WebView, die den gesamten
+    Bildschirm ausfüllt. Die WebView lädt die Logbot-Weboberfläche.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!--
+        WebView: Füllt den gesamten Bildschirm aus.
+        ID "webview" wird in MainActivity verwendet, um die View zu referenzieren.
+    -->
+    <WebView
+        android:id="@+id/webview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</LinearLayout>

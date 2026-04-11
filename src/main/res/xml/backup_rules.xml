@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Backup-Regeln für Android < 12.
+    Zugangsdaten (logbot_secure_prefs) werden explizit vom Backup ausgeschlossen,
+    da die Verschlüsselungsschlüssel gerätespezifisch sind und ein Backup
+    auf einem anderen Gerät nicht entschlüsselt werden könnte.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="logbot_secure_prefs.xml" />
+</full-backup-content>

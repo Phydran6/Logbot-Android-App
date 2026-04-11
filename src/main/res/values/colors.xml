@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Datei:       colors.xml
+    Projekt:     Logbot
+    Autor:       Phydran6
+    Version:     1.0 - 05.04.2026.15.44.55
+
+    Beschreibung:
+    Zentrale Farbpalette der App. Alle Farben werden hier definiert und
+    können in Layouts und Themes per @color/name referenziert werden.
+-->
+<resources>
+    <!-- Reines Schwarz – z.B. für Texte oder Hintergründe im hellen Modus -->
+    <color name="black">#FF000000</color>
+
+    <!-- Reines Weiß – z.B. für Texte oder Hintergründe im dunklen Modus -->
+    <color name="white">#FFFFFFFF</color>
+</resources>

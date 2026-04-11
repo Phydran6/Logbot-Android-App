@@ -1,0 +1,29 @@
+<!--
+    Datei:       strings.xml
+    Projekt:     Logbot
+    Autor:       Phydran6
+    Version:     2.0 - 11.04.2026
+
+    Beschreibung:
+    Alle String-Ressourcen der App. Texte hier zu zentralisieren ermöglicht
+    einfache Lokalisierung durch Anlegen von strings.xml in values-de/, values-en/ etc.
+-->
+<resources>
+    <!-- App-Name: wird im Launcher und in der Titelleiste angezeigt -->
+    <string name="app_name">Logbot</string>
+
+    <!-- Setup-Screen -->
+    <string name="setup_subtitle">Instanz-URL und Auth-Token eingeben\noder QR-Code scannen</string>
+    <string name="hint_instance_url">Instanz-URL (https://…)</string>
+    <string name="hint_auth_token">Auth-Token</string>
+    <string name="btn_connect">Verbinden</string>
+    <string name="btn_scan_qr">QR-Code scannen</string>
+    <string name="qr_scan_prompt">Logbot QR-Code scannen</string>
+
+    <!-- Fehlermeldungen -->
+    <string name="error_url_required">Bitte URL eingeben</string>
+    <string name="error_url_invalid">URL muss mit https:// oder http:// beginnen</string>
+    <string name="error_token_required">Bitte Token eingeben</string>
+    <string name="error_qr_invalid">Ungültiger QR-Code – erwartet: {\"url\":\"…\",\"token\":\"…\"}</string>
+    <string name="error_camera_permission">Kamera-Berechtigung wird für QR-Scan benötigt</string>
+</resources>

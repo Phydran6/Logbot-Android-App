@@ -1,0 +1,22 @@
+<!--
+    Datei:       themes.xml
+    Projekt:     Logbot
+    Autor:       Phydran6
+    Version:     1.0 - 05.04.2026.15.44.55
+
+    Beschreibung:
+    Theme-Definitionen der App. Basiert auf Material3 DayNight ohne ActionBar,
+    damit die WebView den gesamten Bildschirm nutzen kann.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Basis-Theme: Material3 mit automatischer Hell/Dunkel-Umschaltung, keine ActionBar -->
+    <style name="Base.Theme.Logbot" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Hier können eigene Farben für das helle Theme definiert werden -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    </style>
+
+    <!-- App-Theme erbt alle Einstellungen vom Basis-Theme -->
+    <style name="Theme.Logbot" parent="Base.Theme.Logbot" />
+
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Data Extraction Rules für Android 12+.
+    Zugangsdaten (logbot_secure_prefs) werden von Cloud-Backup und
+    Geräte-Transfer ausgeschlossen.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="logbot_secure_prefs.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="logbot_secure_prefs.xml" />
+    </device-transfer>
+</data-extraction-rules>
