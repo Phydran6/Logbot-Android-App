@@ -1,4 +1,4 @@
-# 📱 Logbot-App v2026.04.11.13.38.42
+# 📱 Logbot-Android-App v2026.04.11.13.38.42
 
 Logbot ist eine Android-App zum Erfassen, Verwalten und Analysieren von Logs direkt auf deinem Gerät.  
 Das Projekt wurde mit Android Studio entwickelt und nutzt moderne Android-Entwicklungstechniken.
