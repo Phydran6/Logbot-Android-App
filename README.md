@@ -42,7 +42,7 @@ Logbot/
 ## 🚀 Installation & Setup
 
 1. Repository klonen:  
-   git clone https://github.com/dein-username/logbot.git  
+   git clone https://github.com/Phydran6/Logbot-Android-App
 
 2. Projekt in Android Studio öffnen  
 
