@@ -3,7 +3,7 @@
  * Projekt:      Logbot
  * Paket:        de.phytech.logbot
  * Autor:        Phydran6
- * Version:      2.0 – 17.04.2026
+ * Version:      2.0 – 17.04.2026 (16:31)
  *
  * Beschreibung:
  * Setup-Screen der App. Wird angezeigt wenn noch keine Instanz-URL und kein

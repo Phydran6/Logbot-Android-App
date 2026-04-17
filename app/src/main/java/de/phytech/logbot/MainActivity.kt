@@ -3,7 +3,7 @@
  * Projekt:      Logbot
  * Paket:        de.phytech.logbot
  * Autor:        Phydran6
- * Version:      2.0 – 17.04.2026
+ * Version:      2.0 – 17.04.2026 (16:31)
  *
  * Beschreibung:
  * Haupt-Activity der App. Prüft beim Start ob Instanz-URL und Auth-Token
