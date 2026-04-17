@@ -4,8 +4,8 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
-val localProps = Properties().apply {
-    val f = rootProject.file("local.properties")
+val signingProps = Properties().apply {
+    val f = rootProject.file("signing.properties")
     if (f.exists()) load(f.inputStream())
 }
 
@@ -29,10 +29,10 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile     = file(localProps["signing.storeFile"] as String)
-            storePassword = localProps["signing.storePassword"] as String
-            keyAlias      = localProps["signing.keyAlias"] as String
-            keyPassword   = localProps["signing.keyPassword"] as String
+            storeFile     = file(signingProps.getProperty("storeFile"))
+            storePassword = signingProps.getProperty("storePassword")
+            keyAlias      = signingProps.getProperty("keyAlias")
+            keyPassword   = signingProps.getProperty("keyPassword")
         }
     }
 
