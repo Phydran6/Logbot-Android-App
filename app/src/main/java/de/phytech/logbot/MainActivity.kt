@@ -22,6 +22,7 @@ import android.os.Bundle
 import android.webkit.JsResult
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -91,6 +92,31 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webViewClient = object : WebViewClient() {
+
+            private var sessionExpired = false
+
+            override fun onReceivedHttpError(
+                view: WebView,
+                request: WebResourceRequest,
+                errorResponse: WebResourceResponse
+            ) {
+                super.onReceivedHttpError(view, request, errorResponse)
+                if (errorResponse.statusCode == 401 && request.isForMainFrame && !sessionExpired) {
+                    sessionExpired = true
+                    getEncryptedPrefs(this@MainActivity).edit()
+                        .remove(PREF_INSTANCE_URL)
+                        .remove(PREF_AUTH_TOKEN)
+                        .apply()
+                    AlertDialog.Builder(this@MainActivity)
+                        .setMessage(getString(R.string.error_session_expired))
+                        .setPositiveButton("OK") { _, _ ->
+                            startActivity(Intent(this@MainActivity, SetupActivity::class.java))
+                            finish()
+                        }
+                        .setCancelable(false)
+                        .show()
+                }
+            }
 
             /**
              * Navigations-Kontrolle: Nur innerhalb der konfigurierten Instanz erlaubt.

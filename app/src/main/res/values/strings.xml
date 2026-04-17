@@ -22,7 +22,8 @@
 
     <!-- Fehlermeldungen -->
     <string name="error_url_required">Bitte URL eingeben</string>
-    <string name="error_url_invalid">URL muss mit https:// oder http:// beginnen</string>
+    <string name="error_url_invalid">URL muss mit https:// beginnen</string>
+    <string name="error_session_expired">Sitzung abgelaufen – bitte Zugangsdaten neu eingeben</string>
     <string name="error_token_required">Bitte Token eingeben</string>
     <string name="error_qr_invalid">Ungültiger QR-Code – erwartet: {\"url\":\"…\",\"token\":\"…\"}</string>
     <string name="error_camera_permission">Kamera-Berechtigung wird für QR-Scan benötigt</string>

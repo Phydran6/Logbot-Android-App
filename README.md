@@ -96,3 +96,17 @@ Siehe LICENSE Datei für mehr Informationen.
 
 - Stelle sicher, dass du die richtige Android SDK Version installiert hast  
 - Das Projekt wurde mit Android Studio entwickelt und getestet  
+
+---
+
+## 🔒 Sicherheitshinweis – Certificate Pinning
+
+Die App implementiert **kein Certificate Pinning**.
+
+Das bedeutet: Die App prüft zwar, dass die HTTPS-Verbindung ein gültiges Zertifikat verwendet, verifiziert aber nicht, ob es sich dabei um das spezifische Zertifikat deiner Instanz handelt. Ein Angreifer im selben Netzwerk könnte theoretisch ein eigenes gültiges Zertifikat einschleusen (Man-in-the-Middle) und dabei den Auth-Token abfangen.
+
+**Warum ist das nicht implementiert?**  
+Dieses Projekt wurde primär für den eigenen Einsatz gebaut. In einer kontrollierten Umgebung (eigenes Netzwerk, VPN) ist Certificate Pinning nicht zwingend erforderlich. Die Implementierung bringt außerdem operativen Aufwand mit sich: Bei jedem Zertifikatswechsel des Servers müsste eine neue App-Version veröffentlicht werden.
+
+**Was bedeutet das für dich?**  
+Wer die App in einem öffentlichen oder nicht vertrauenswürdigen Netzwerk einsetzt, sollte sich dieses Risikos bewusst sein. Certificate Pinning ist von mir aktuell nicht geplant – Pull Requests dazu sind aber ausdrücklich willkommen.

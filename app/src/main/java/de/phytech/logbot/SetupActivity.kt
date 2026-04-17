@@ -84,7 +84,7 @@ class SetupActivity : AppCompatActivity() {
         if (url.isBlank()) {
             tilUrl.error = getString(R.string.error_url_required)
             valid = false
-        } else if (!url.startsWith("https://") && !url.startsWith("http://")) {
+        } else if (!url.startsWith("https://")) {
             tilUrl.error = getString(R.string.error_url_invalid)
             valid = false
         }
@@ -129,7 +129,7 @@ class SetupActivity : AppCompatActivity() {
             val url   = json.getString("url").trim()
             val token = json.getString("token").trim()
 
-            if (url.isNotBlank() && token.isNotBlank()) {
+            if (url.startsWith("https://") && token.isNotBlank()) {
                 saveAndLaunch(url, token)
             } else {
                 showQrError()
