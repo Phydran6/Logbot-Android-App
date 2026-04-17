@@ -18,6 +18,10 @@ local.properties
 # Claude Code – lokale Einstellungen, nicht ins Repo
 .claude/
 
+# Keystore – niemals ins Repo
+*.jks
+*.keystore
+
 # Release-Binaries – nicht ins Repo (werden separat deployed)
 *.aab
 *.apk
