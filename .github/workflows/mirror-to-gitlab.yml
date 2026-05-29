@@ -30,9 +30,13 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Push mirror to GitLab
+      - name: Push branches + tags to GitLab
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
         run: |
           git remote add gitlab "https://oauth2:${GITLAB_TOKEN}@gitlab.com/Phydran6/Logbot-Android-App.git"
-          git push --mirror gitlab
+          # Spiegelt nur lokale heads + tags (kein refs/remotes/* -> 'deny updating a hidden ref')
+          # --prune loescht refs auf GitLab, die auf GitHub geloescht wurden.
+          git push --force --prune gitlab \
+            'refs/heads/*:refs/heads/*' \
+            'refs/tags/*:refs/tags/*'
