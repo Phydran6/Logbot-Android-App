@@ -21,6 +21,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -82,6 +83,8 @@ class SetupActivity : AppCompatActivity() {
 
         btnConnect.setOnClickListener { handleConnect() }
         btnScanQr.setOnClickListener  { requestCameraAndScan() }
+
+        findViewById<TextView>(R.id.tvVersion).text = "v${MainActivity.appVersionName(this)}"
     }
 
     // --- Manueller Login ---

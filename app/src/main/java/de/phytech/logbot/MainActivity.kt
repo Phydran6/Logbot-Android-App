@@ -20,6 +20,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.webkit.JsResult
+import android.widget.TextView
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -94,6 +95,7 @@ class MainActivity : AppCompatActivity() {
     private fun launchMain(instanceUrl: String, authToken: String) {
         setContentView(R.layout.activity_main)
         webView = findViewById(R.id.webview)
+        findViewById<TextView>(R.id.tvVersion)?.text = "v${appVersionName(this)}"
 
         setupWebView(instanceUrl, authToken)
 
@@ -248,6 +250,13 @@ class MainActivity : AppCompatActivity() {
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
+        }
+
+        /** versionName aus dem PackageInfo. Faengt zurueck auf '?' bei unerwarteten Fehlern. */
+        fun appVersionName(context: Context): String = try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "?"
+        } catch (_: Exception) {
+            "?"
         }
     }
 }

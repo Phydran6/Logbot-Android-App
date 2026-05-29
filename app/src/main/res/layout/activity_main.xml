@@ -9,7 +9,7 @@
     Haupt-Layout der App. Enthält ausschließlich eine WebView, die den gesamten
     Bildschirm ausfüllt. Die WebView lädt die Logbot-Weboberfläche.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -22,4 +22,24 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-</LinearLayout>
+    <!--
+        Dezenter Versions-Overlay unten rechts. Default-TextView ist nicht
+        clickable/focusable, blockiert also keine Touches an der WebView.
+        Weißer Text mit Drop-Shadow ist auf hellen wie dunklen Web-UIs lesbar.
+    -->
+    <TextView
+        android:id="@+id/tvVersion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="6dp"
+        android:padding="2dp"
+        android:textSize="9sp"
+        android:textColor="#99FFFFFF"
+        android:shadowColor="#88000000"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:shadowRadius="3"
+        android:fontFamily="monospace" />
+
+</FrameLayout>

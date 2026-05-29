@@ -110,5 +110,16 @@
             android:text="@string/setup_biometric_lock"
             android:visibility="gone" />
 
+        <!-- Dezente Versions-Anzeige unten -->
+        <TextView
+            android:id="@+id/tvVersion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="24dp"
+            android:textSize="11sp"
+            android:textColor="?android:attr/textColorTertiary"
+            android:fontFamily="monospace" />
+
     </LinearLayout>
 </ScrollView>

@@ -45,4 +45,8 @@ class LogbotBridge(private val appContext: Context) {
         prefs.edit().putBoolean(MainActivity.PREF_BIOMETRIC_ENABLED, enabled).apply()
         return true
     }
+
+    /** Aktueller versionName der App, fuer einen About-Eintrag in der Server-UI. */
+    @JavascriptInterface
+    fun getAppVersion(): String = MainActivity.appVersionName(appContext)
 }

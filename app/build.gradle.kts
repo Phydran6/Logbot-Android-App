@@ -22,8 +22,8 @@ android {
         applicationId = "de.phytech.logbot"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
-        versionName = "2026.04.17.16.31.30"
+        versionCode = 4
+        versionName = "2026.05.29.22.30.00"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
