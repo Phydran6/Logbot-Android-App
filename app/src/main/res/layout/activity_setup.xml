@@ -101,5 +101,14 @@
             android:layout_height="wrap_content"
             android:text="@string/btn_scan_qr" />
 
+        <!-- App-Lock per Biometrie (nur sichtbar wenn Geraet das unterstuetzt) -->
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/swBiometric"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/setup_biometric_lock"
+            android:visibility="gone" />
+
     </LinearLayout>
 </ScrollView>

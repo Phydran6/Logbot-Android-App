@@ -20,11 +20,14 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.journeyapps.barcodescanner.ScanContract
@@ -40,6 +43,7 @@ class SetupActivity : AppCompatActivity() {
     private lateinit var etToken: TextInputEditText
     private lateinit var btnConnect: MaterialButton
     private lateinit var btnScanQr: MaterialButton
+    private lateinit var swBiometric: MaterialSwitch
 
     // ZXing QR-Scanner Launcher (Activity Result API)
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
@@ -66,6 +70,15 @@ class SetupActivity : AppCompatActivity() {
         etToken    = findViewById(R.id.etAuthToken)
         btnConnect = findViewById(R.id.btnConnect)
         btnScanQr  = findViewById(R.id.btnScanQr)
+        swBiometric = findViewById(R.id.swBiometric)
+
+        // Bio-Lock-Switch nur zeigen, wenn das Geraet ueberhaupt Bio/PIN hat
+        val bm = BiometricManager.from(this)
+        val bioOk = bm.canAuthenticate(
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        ) == BiometricManager.BIOMETRIC_SUCCESS
+        if (bioOk) swBiometric.visibility = View.VISIBLE
 
         btnConnect.setOnClickListener { handleConnect() }
         btnScanQr.setOnClickListener  { requestCameraAndScan() }
@@ -152,6 +165,7 @@ class SetupActivity : AppCompatActivity() {
         MainActivity.getEncryptedPrefs(this).edit()
             .putString(MainActivity.PREF_INSTANCE_URL, url)
             .putString(MainActivity.PREF_AUTH_TOKEN, token)
+            .putBoolean(MainActivity.PREF_BIOMETRIC_ENABLED, swBiometric.isChecked)
             .apply()
 
         startActivity(Intent(this, MainActivity::class.java))
