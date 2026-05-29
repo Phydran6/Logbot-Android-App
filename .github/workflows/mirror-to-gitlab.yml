@@ -1,0 +1,38 @@
+name: Mirror to GitLab
+
+# Spiegelt bei jedem Push auf main oder neuem v*-Tag den kompletten Repo-Stand
+# nach gitlab.com/Phydran6/Logbot-Android-App. GitLab ist 1:1-Spiegel von GitHub,
+# damit F-Droid die GitLab-Quelle nutzen kann.
+#
+# Auth: GitHub-Secret GITLAB_TOKEN haelt einen Project-Access-Token mit
+# write_repository-Scope (im Projekt > Settings > Access Tokens auf GitLab
+# verwaltbar/rotierbar).
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-to-gitlab
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Push mirror to GitLab
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          git remote add gitlab "https://oauth2:${GITLAB_TOKEN}@gitlab.com/Phydran6/Logbot-Android-App.git"
+          git push --mirror gitlab
