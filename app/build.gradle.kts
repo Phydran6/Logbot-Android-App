@@ -8,6 +8,7 @@ val signingProps = Properties().apply {
     val f = rootProject.file("signing.properties")
     if (f.exists()) load(f.inputStream())
 }
+val hasReleaseSigning = signingProps.getProperty("storeFile") != null
 
 android {
     namespace = "de.phytech.logbot"
@@ -27,18 +28,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
-        create("release") {
-            storeFile     = file(signingProps.getProperty("storeFile"))
-            storePassword = signingProps.getProperty("storePassword")
-            keyAlias      = signingProps.getProperty("keyAlias")
-            keyPassword   = signingProps.getProperty("keyPassword")
+    if (hasReleaseSigning) {
+        signingConfigs {
+            create("release") {
+                storeFile     = file(signingProps.getProperty("storeFile"))
+                storePassword = signingProps.getProperty("storePassword")
+                keyAlias      = signingProps.getProperty("keyAlias")
+                keyPassword   = signingProps.getProperty("keyPassword")
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
