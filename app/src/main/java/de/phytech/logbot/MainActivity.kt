@@ -28,6 +28,9 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import org.json.JSONObject
@@ -51,6 +54,44 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        // App-Lock: bei aktivierter Biometrie zuerst entsperren lassen.
+        // Bei Abbruch/Fehler: App schliessen, ohne Token zu entschluesseln.
+        if (prefs.getBoolean(PREF_BIOMETRIC_ENABLED, false)) {
+            promptBiometric(
+                onSuccess = { launchMain(instanceUrl, authToken) },
+                onFailure = { finish() }
+            )
+        } else {
+            launchMain(instanceUrl, authToken)
+        }
+    }
+
+    private fun promptBiometric(onSuccess: () -> Unit, onFailure: () -> Unit) {
+        val info = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(getString(R.string.biometric_prompt_title))
+            .setSubtitle(getString(R.string.biometric_prompt_subtitle))
+            .setAllowedAuthenticators(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            )
+            .build()
+        val prompt = BiometricPrompt(
+            this,
+            ContextCompat.getMainExecutor(this),
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    onSuccess()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    onFailure()
+                }
+            }
+        )
+        prompt.authenticate(info)
+    }
+
+    private fun launchMain(instanceUrl: String, authToken: String) {
         setContentView(R.layout.activity_main)
         webView = findViewById(R.id.webview)
 
@@ -74,6 +115,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupWebView(instanceUrl: String, authToken: String) {
         val instanceHost = Uri.parse(instanceUrl).host ?: ""
         val authHeaders = mapOf("Authorization" to "Bearer $authToken")
+
+        // JS-Bruecke: erlaubt der Web-UI, App-Lock per Biometrie zu toggeln.
+        // Nur annotated Methoden in LogbotBridge sind aufrufbar (Android API 17+).
+        webView.addJavascriptInterface(LogbotBridge(applicationContext), "LogbotApp")
 
         // --- Security Hardening ---
         with(webView.settings) {
@@ -185,6 +230,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val PREF_INSTANCE_URL = "instance_url"
         const val PREF_AUTH_TOKEN = "auth_token"
+        const val PREF_BIOMETRIC_ENABLED = "biometric_enabled"
         private const val PREFS_FILE = "logbot_secure_prefs"
 
         /**

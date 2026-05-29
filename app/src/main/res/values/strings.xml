@@ -20,6 +20,10 @@
     <string name="btn_scan_qr">QR-Code scannen</string>
     <string name="qr_scan_prompt">Logbot QR-Code scannen</string>
 
+    <!-- Biometrie-Prompt (App-Lock) -->
+    <string name="biometric_prompt_title">Logbot entsperren</string>
+    <string name="biometric_prompt_subtitle">Mit Fingerabdruck, Gesicht oder Ger&#228;te-PIN best&#228;tigen</string>
+
     <!-- Fehlermeldungen -->
     <string name="error_url_required">Bitte URL eingeben</string>
     <string name="error_url_invalid">URL muss mit https:// beginnen</string>
