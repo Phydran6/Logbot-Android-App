@@ -8,6 +8,9 @@ das Projekt verwendet [datumsbasiertes Versioning](#versionsschema) im Schema
 
 ## [Unreleased]
 
+### Hinweis
+- Ab [Logbot-Server v2026.05.30.17.22.26](https://github.com/Phydran6/Logbot-Server/releases) unterstützt der Server **MFA via TOTP** (Google Authenticator, Authy, Aegis, 1Password u. a.) sowie Backup-Codes. Die App benötigt dafür **keine Änderungen**: der zweistufige Login (Passwort → TOTP/Backup-Code) wird im WebView automatisch angezeigt. Der QR-Code-Setup-Flow ist weiterhin nutzbar, weil der App-Token nur aus einer bereits authentifizierten Web-Session erzeugt werden kann.
+
 ## [2026.05.29.22.30.00] - 2026-05-29
 
 Stichwort: **App-Lock & Versionierung**
