@@ -27,6 +27,7 @@ import de.phytech.logbot.core.util.rememberAppVersionName
 fun SetupScreen(
     onContinue: () -> Unit,
 ) {
+    val version = rememberAppVersionName()
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -61,7 +62,7 @@ fun SetupScreen(
                 Text("Menü-Gerüst ansehen")
             }
             Text(
-                text = "v${rememberAppVersionName()}",
+                text = "v$version",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 modifier = Modifier.padding(top = 24.dp),
