@@ -13,34 +13,19 @@ val signingProps = Properties().apply {
 }
 val hasReleaseSigning = signingProps.getProperty("storeFile") != null
 
-// --- Auto-Versioning aus Git ------------------------------------------------
-// Kein manuelles Bumpen mehr: Der Build leitet die Version aus Git ab.
-//   versionCode = Anzahl Commits (monoton steigend)
-//   versionName = Datum des letzten Commits (Schema JAHR.MONAT.TAG.STD.MIN.SEK)
-//                 + "-alpha" (Rewrite ist work-in-progress) + Kurz-SHA
-// providers.exec ist Configuration-Cache-kompatibel. Ohne Git greifen Fallbacks.
-// Hinweis: CI braucht volle History (actions/checkout fetch-depth: 0).
-fun git(vararg args: String): String? = runCatching {
-    providers.exec {
-        commandLine(*args)
-        isIgnoreExitValue = true
-    }.standardOutput.asText.get().trim().ifEmpty { null }
-}.getOrNull()
-
-val gitCommitCount = git("git", "rev-list", "--count", "HEAD")?.toIntOrNull()
-val gitShortSha = git("git", "rev-parse", "--short", "HEAD")
-val gitCommitDate = git("git", "show", "-s", "--format=%cd", "--date=format:%Y.%m.%d.%H.%M.%S", "HEAD")
-
-// Sicherheits-Untergrenze 5, damit nie unter die letzte WebView-Release (4) gefallen wird.
-val buildVersionCode = (gitCommitCount ?: 1).coerceAtLeast(5)
-val buildVersionName = buildString {
-    append(
-        gitCommitDate ?: java.time.ZonedDateTime.now(java.time.ZoneId.of("Europe/Berlin"))
-            .format(java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd.HH.mm.ss"))
-    )
-    append("-alpha")
-    gitShortSha?.let { append("."); append(it) }
-}
+// --- Auto-Versioning --------------------------------------------------------
+// Kein manuelles Bumpen mehr. Die Version wird in CI aus Git berechnet und per
+// Gradle-Property übergeben (siehe .github/workflows/build-debug.yml):
+//   -PlogbotVersionCode = Commit-Anzahl (monoton steigend)
+//   -PlogbotVersionName = Datum des letzten Commits (JAHR.MONAT.TAG.STD.MIN.SEK)
+//                         + "-alpha" + Kurz-SHA
+// Lokale Builds ohne diese Properties nutzen einen Datums-Fallback ("-alpha-dev").
+// Bewusst kein Git-Aufruf in Gradle (Configuration-Cache-sicher, keine Prozess-Exec).
+val buildVersionCode = (project.findProperty("logbotVersionCode") as String?)?.toIntOrNull()?.coerceAtLeast(5)
+    ?: 5
+val buildVersionName = (project.findProperty("logbotVersionName") as String?)?.takeIf { it.isNotBlank() }
+    ?: (java.time.ZonedDateTime.now(java.time.ZoneId.of("Europe/Berlin"))
+        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd.HH.mm.ss")) + "-alpha-dev")
 
 android {
     namespace = "de.phytech.logbot"
