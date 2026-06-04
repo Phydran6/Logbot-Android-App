@@ -1,7 +1,9 @@
 [versions]
 agp = "9.1.0"
 # Hinweis: Versionen ggf. von Android Studio ("Update available") bestätigen lassen.
-kotlin = "2.1.20"
+# kotlin muss zur in AGP 9 eingebauten Kotlin-Version passen (AGP 9.0 -> KGP 2.2.10),
+# da das Compose-Compiler-Plugin exakt diese Version braucht.
+kotlin = "2.2.10"
 coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -46,6 +48,6 @@ androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecyc
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 
 [plugins]
+# Kein kotlin-android-Plugin: AGP 9 bringt Built-in-Kotlin-Support mit (Default an).
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
