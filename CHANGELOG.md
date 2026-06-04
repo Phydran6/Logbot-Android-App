@@ -8,6 +8,41 @@ das Projekt verwendet [datumsbasiertes Versioning](#versionsschema) im Schema
 
 ## [Unreleased]
 
+Stichwort: **Neuausrichtung – native App statt WebView**
+
+Die App wird von einem WebView-Wrapper zu einer eigenständigen nativen App
+(Jetpack Compose) umgebaut, die die Server-API direkt nutzt und die
+Server-Oberfläche nativ nachbaut. Umsetzung in Phasen (siehe Roadmap).
+
+### Hinzugefügt
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): Bauplan der nativen App (Tech-Stack
+  Compose/Hilt/Retrofit, Paketstruktur, MVVM+Repository, Navigation als Server-Sidebar,
+  Auth-/Login-Flows inkl. korrektem QR-Token-Exchange, Screen↔API-Mapping).
+- [`docs/ROADMAP.md`](docs/ROADMAP.md): Phasenplan (0 Discovery ✅, 1 Architektur ✅,
+  2 Gerüst, 3a/3b Screens, 4 Feinschliff) mit Funktionsparitäts-Checkliste.
+
+### Geändert
+- README komplett überarbeitet: beschreibt die App jetzt eindeutig als **nativen
+  Client für den Logbot-Server** (statt generischer „Log-App"-Beschreibung) inkl.
+  Umbau-Status.
+
+### Hinweise
+- Architektur-Entscheidung: **Android-only mit Jetpack Compose** (KMP/iOS verworfen).
+- Korrektur dokumentiert: Der QR-App-Login-Token ist ein einmaliger 15-Min-Token und
+  muss über `POST /api/auth/app-token/exchange` gegen ein JWT getauscht werden — die
+  bisherige WebView-Variante nutzte den gescannten Token fälschlich direkt als Bearer.
+
+### Phase 2a – natives Skeleton (Branch `native-rewrite`)
+- Build modernisiert: Kotlin-Android- und Compose-Compiler-Plugin ergänzt, Compose-BOM,
+  Material 3, Navigation-Compose, Activity-/Lifecycle-Compose; Java/Kotlin-Target auf 17.
+- **WebView entfernt**: `MainActivity` ist jetzt ein Single-Activity-Compose-Host mit
+  Root-NavHost (Auth-Graph → Haupt-Graph). Gelöscht: `SetupActivity`, `LogbotBridge`,
+  `activity_main.xml`, `activity_setup.xml` und die WebView-Proguard-Regeln.
+- Material-3-Theme (`LogbotTheme`, Hell/Dunkel + dynamische Farben ab Android 12).
+- **Navigations-Drawer als Server-Sidebar**: Dashboard, Logs, Agents, Users, Webhooks,
+  Health, Einstellungen, Branding (Platzhalter-Screens) + Abmelden; Admin-Gating vorbereitet.
+- Noch ohne Server-Anbindung — Login/MFA/QR und echte Inhalte folgen in 2b/Phase 3.
+
 ## [2026.05.29.22.30.00] - 2026-05-29
 
 Stichwort: **App-Lock & Versionierung**

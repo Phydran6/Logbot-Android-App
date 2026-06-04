@@ -1,112 +1,121 @@
-# 📱 Logbot-Android-App v2026.05.29.22.30.00
+# 📱 Logbot Android
 
-Logbot ist eine Android-App zum Erfassen, Verwalten und Analysieren von Logs direkt auf deinem Gerät.  
-Das Projekt wurde mit Android Studio entwickelt und nutzt moderne Android-Entwicklungstechniken.
+**Nativer Android-Client für einen selbst gehosteten
+[Logbot-Server](https://github.com/Phydran6/Logbot-Server).**
 
----
-
-## ✨ Features
-
-- 📊 Log-Erfassung in Echtzeit  
-- 🗂️ Strukturierte Speicherung von Daten  
-- 🔍 Filter- und Suchfunktionen  
-- 📱 Optimiert für verschiedene Bildschirmgrößen  
-- ⚡ Schnelle und einfache Bedienung  
+Logbot Android ist **kein** eigenständiges Log-Werkzeug, sondern die mobile
+Oberfläche zu *deiner* Logbot-Instanz: Die App verbindet sich mit dem Server,
+holt die Daten über dessen REST-API und bildet die Server-Oberfläche
+(Dashboard, Logs, Agents, Users, Webhooks, Health, Settings, Branding) nativ ab.
 
 ---
 
-## 🛠️ Technologien
+## 🚧 Status: Umbau auf native App
 
-- Kotlin / Java  
-- Android SDK  
-- Gradle Build System  
-- XML Layouts  
+Die App wird gerade vom bisherigen **WebView-Wrapper** zu einer **eigenständigen
+nativen App** (Jetpack Compose) umgebaut. Grund: Die WebView-Lösung war einfach,
+aber nicht praxistauglich genug — die native App ist schneller und
+benutzerfreundlicher, bei gleicher Funktionsabdeckung.
 
----
+- Aktuelle Phase: **Phase 1 – Architektur & Beschreibung**
+- Bauplan: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Fahrplan: [docs/ROADMAP.md](docs/ROADMAP.md)
 
-## 📂 Projektstruktur
-
-Logbot/  
-├── app/  
-│   ├── src/  
-│   │   ├── main/  
-│   │   │   ├── java/        # Quellcode  
-│   │   │   ├── res/         # Layouts, Strings, Assets  
-│   │   │   └── AndroidManifest.xml  
-│   ├── build.gradle  
-├── build.gradle  
-└── settings.gradle  
+> Solange der Umbau läuft, kann der gebaute Stand noch Teile der alten
+> WebView-Variante enthalten. Die README beschreibt das **Zielbild** der App.
 
 ---
 
-## 🚀 Installation & Setup
+## ✨ Funktionen
 
-1. Repository klonen:  
-   git clone https://github.com/Phydran6/Logbot-Android-App
+**Verbindung & Anmeldung**
+- Verbindung zur eigenen Instanz über **URL + Login** oder **QR-App-Login**
+  (kurzlebiger Einmal-Token, der serverseitig gegen ein Zugangstoken getauscht wird)
+- **MFA/2FA** (TOTP oder Backup-Code), passend zum Server
+- **Biometrie-/PIN-App-Lock** beim Start
+- **Verschlüsselter Token-Speicher** (Android Keystore)
 
-2. Projekt in Android Studio öffnen  
-
-3. Abhängigkeiten synchronisieren:  
-   File > Sync Project with Gradle Files  
-
-4. App starten:  
-   Emulator oder echtes Gerät auswählen und Run klicken  
+**Oberfläche (spiegelt den Server)**
+- 📊 **Dashboard** mit Statistiken
+- 🔍 **Logs** mit Filter, Suche und Detailansicht (paginiert, für große Datenmengen)
+- 🖥️ **Agents** – Geräte, Online-Status, Retention
+- 👥 **Users** – Benutzer- und Rollenverwaltung (Admin)
+- 🔗 **Webhooks** – Verwaltung und Aufruf-Statistik
+- ❤️ **Health** – System-Ressourcen (CPU/RAM/Disk/Uptime)
+- ⚙️ **Settings** & 🎨 **Branding** (Whitelabel, Dark/Light)
 
 ---
 
-## ▶️ Nutzung
+## 🛠️ Technologie
 
-- App starten  
-- Logs erfassen oder importieren  
-- Daten analysieren oder filtern  
+- **Kotlin** + **Jetpack Compose** + **Material 3**
+- Architektur: **MVVM + Repository**, Single-Activity, Navigation-Compose
+- **Hilt** (DI), **Retrofit/OkHttp** + kotlinx.serialization (REST), **Coroutines/Flow**
+- **Paging 3** für die Log-Liste
+- Gradle Build System
+
+Details im [Architektur-Dokument](docs/ARCHITECTURE.md).
+
+---
+
+## 🚀 Voraussetzungen
+
+- Eine erreichbare **Logbot-Server-Instanz** (HTTPS) – siehe
+  [Logbot-Server](https://github.com/Phydran6/Logbot-Server)
+- Android-Gerät mit **Android 7.0+ (API 24)**
+
+---
+
+## ▶️ Einrichtung in der App
+
+1. App starten → **Setup-Screen**
+2. Entweder:
+   - **Instanz-URL** (`https://…`) eingeben und mit Benutzer/Passwort anmelden
+     (ggf. MFA-Code), **oder**
+   - **QR-Code scannen** (im Server-Web-UI im Benutzer-Bearbeiten-Modal erzeugbar)
+3. Optional **Biometrie-Lock** aktivieren
+4. Loslegen – Navigation über das Menü (gleiche Punkte wie im Server)
 
 ---
 
 ## 🧪 Build
 
-Debug-Build:  
-./gradlew assembleDebug  
+```bash
+# Debug-Build
+./gradlew assembleDebug
 
-Release-Build:  
-./gradlew assembleRelease  
+# Release-Build (benötigt signing.properties, siehe unten)
+./gradlew assembleRelease
+```
 
----
-
-## 🤝 Mitwirken
-
-Pull Requests sind willkommen.  
-Bitte erstelle vorher ein Issue, um größere Änderungen zu besprechen.  
-
----
-
-## 📄 Lizenz
-
-Dieses Projekt steht unter der MIT-Lizenz.  
-Siehe LICENSE Datei für mehr Informationen.  
-
----
-
-## 👤 Autor
-
-- Dein Name  
-
----
-
-## 💡 Hinweise
-
-- Stelle sicher, dass du die richtige Android SDK Version installiert hast  
-- Das Projekt wurde mit Android Studio entwickelt und getestet  
+Release-Signing über eine gitignorete `signing.properties` (`storeFile`,
+`storePassword`, `keyAlias`, `keyPassword`). Fehlt sie, wird die Release-Signing-Config
+einfach nicht registriert (Debug-Builds funktionieren trotzdem).
 
 ---
 
 ## 🔒 Sicherheitshinweis – Certificate Pinning
 
-Die App implementiert **kein Certificate Pinning**.
+Die App implementiert **kein Certificate Pinning**. Sie prüft, dass die HTTPS-Verbindung
+ein gültiges Zertifikat verwendet, verifiziert aber nicht das *spezifische* Zertifikat
+deiner Instanz. In einem nicht vertrauenswürdigen Netzwerk könnte ein Angreifer
+theoretisch per Man-in-the-Middle ein eigenes gültiges Zertifikat einschleusen und den
+Token abfangen.
 
-Das bedeutet: Die App prüft zwar, dass die HTTPS-Verbindung ein gültiges Zertifikat verwendet, verifiziert aber nicht, ob es sich dabei um das spezifische Zertifikat deiner Instanz handelt. Ein Angreifer im selben Netzwerk könnte theoretisch ein eigenes gültiges Zertifikat einschleusen (Man-in-the-Middle) und dabei den Auth-Token abfangen.
+Das Projekt ist primär für den Eigeneinsatz in kontrollierten Umgebungen (eigenes
+Netzwerk, VPN) gebaut. Certificate Pinning brächte zudem operativen Aufwand (neue
+App-Version bei jedem Server-Zertifikatswechsel). Pull Requests dazu sind willkommen.
 
-**Warum ist das nicht implementiert?**  
-Dieses Projekt wurde primär für den eigenen Einsatz gebaut. In einer kontrollierten Umgebung (eigenes Netzwerk, VPN) ist Certificate Pinning nicht zwingend erforderlich. Die Implementierung bringt außerdem operativen Aufwand mit sich: Bei jedem Zertifikatswechsel des Servers müsste eine neue App-Version veröffentlicht werden.
+---
 
-**Was bedeutet das für dich?**  
-Wer die App in einem öffentlichen oder nicht vertrauenswürdigen Netzwerk einsetzt, sollte sich dieses Risikos bewusst sein. Certificate Pinning ist von mir aktuell nicht geplant – Pull Requests dazu sind aber ausdrücklich willkommen.
+## 🤝 Mitwirken
+
+Pull Requests sind willkommen. Bitte vorab ein Issue für größere Änderungen erstellen.
+
+## 📄 Lizenz
+
+MIT-Lizenz – siehe [LICENSE](LICENSE).
+
+## 👤 Autor
+
+Phydran6

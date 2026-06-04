@@ -17,16 +17,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Logbot">
 
-        <!-- Setup-Screen: wird bei erstem Start oder fehlenden Zugangsdaten gezeigt -->
-        <activity
-            android:name=".SetupActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-
-        <!-- Haupt-Screen mit WebView -->
+        <!-- Single-Activity Compose-Host -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

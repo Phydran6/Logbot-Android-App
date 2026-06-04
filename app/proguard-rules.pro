@@ -1,12 +1,3 @@
-# ─── WebView ──────────────────────────────────────────────────────────────────
-# WebView-Klassen nicht entfernen
--keepclassmembers class * extends android.webkit.WebViewClient {
-    public *;
-}
--keepclassmembers class * extends android.webkit.WebChromeClient {
-    public *;
-}
-
 # ─── ZXing / QR-Code Scanner ──────────────────────────────────────────────────
 -keep class com.journeyapps.** { *; }
 -keep class com.google.zxing.** { *; }
