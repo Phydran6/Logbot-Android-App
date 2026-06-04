@@ -43,6 +43,15 @@ Server-Oberfläche nativ nachbaut. Umsetzung in Phasen (siehe Roadmap).
   Health, Einstellungen, Branding (Platzhalter-Screens) + Abmelden; Admin-Gating vorbereitet.
 - Noch ohne Server-Anbindung — Login/MFA/QR und echte Inhalte folgen in 2b/Phase 3.
 
+### Versionierung (automatisch)
+- `versionCode`/`versionName` werden jetzt **automatisch aus Git** abgeleitet (kein
+  manuelles Bumpen mehr): `versionCode` = Commit-Anzahl (monoton), `versionName` =
+  Datum des letzten Commits (`JAHR.MONAT.TAG.STD.MIN.SEK`) + `-alpha` + Kurz-SHA.
+  CI checkt dafür mit `fetch-depth: 0` aus.
+- Version wird wieder in der App angezeigt (Setup-Screen unten + Drawer-Footer).
+- Statische `versionName 2026.05.29.22.30.00` / `versionCode 4` entfernt (war der Stand
+  der alten WebView-Release und damit im Rewrite irreführend).
+
 ## [2026.05.29.22.30.00] - 2026-05-29
 
 Stichwort: **App-Lock & Versionierung**
