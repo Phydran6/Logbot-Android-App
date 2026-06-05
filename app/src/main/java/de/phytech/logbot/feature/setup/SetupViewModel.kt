@@ -22,7 +22,7 @@ class SetupViewModel @Inject constructor(
     var error by mutableStateOf<String?>(null)
         private set
 
-    fun setError(message: String?) {
+    fun showError(message: String?) {
         error = message
     }
 

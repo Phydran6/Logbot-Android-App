@@ -59,7 +59,7 @@ fun SetupScreen(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         if (granted) scanLauncher.launch(scanOptions())
-        else viewModel.setError("Kamera-Berechtigung wird für den QR-Scan benötigt")
+        else viewModel.showError("Kamera-Berechtigung wird für den QR-Scan benötigt")
     }
     val startScan = {
         val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
