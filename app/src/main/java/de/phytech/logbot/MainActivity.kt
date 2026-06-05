@@ -21,11 +21,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import dagger.hilt.android.AndroidEntryPoint
 import de.phytech.logbot.core.designsystem.theme.LogbotTheme
 import de.phytech.logbot.core.navigation.Routes
 import de.phytech.logbot.feature.setup.SetupScreen
 import de.phytech.logbot.feature.shell.MainShell
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

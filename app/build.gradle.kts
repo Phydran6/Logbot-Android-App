@@ -8,6 +8,9 @@ plugins {
     // aktiviert den Compose-Compiler (Version muss zur Built-in-Kotlin-Version passen).
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    // KSP statt kapt (kapt ist mit AGP-9-Built-in-Kotlin inkompatibel); Hilt nutzt KSP.
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 val signingProps = Properties().apply {
@@ -102,10 +105,20 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.appcompat)
 
-    // Wird in Phase 2b genutzt (sicherer Token-Speicher, Biometrie, QR-Scan)
+    // Sicherer Token-Speicher, Biometrie, QR-Scan
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.biometric)
     implementation(libs.zxing.android.embedded)
+
+    // DI (Hilt) – Annotation-Processing via KSP (kapt ist mit AGP-9-Built-in-Kotlin inkompatibel)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    // Netzwerk
+    implementation(libs.retrofit)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
 
     debugImplementation(libs.compose.ui.tooling)
 
