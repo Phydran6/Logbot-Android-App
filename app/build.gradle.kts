@@ -11,6 +11,7 @@ plugins {
     // KSP statt kapt (kapt ist mit AGP-9-Built-in-Kotlin inkompatibel); Hilt nutzt KSP.
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 val signingProps = Properties().apply {
@@ -117,8 +118,10 @@ dependencies {
 
     // Netzwerk
     implementation(libs.retrofit)
+    implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+    implementation(libs.kotlinx.serialization.json)
 
     debugImplementation(libs.compose.ui.tooling)
 
