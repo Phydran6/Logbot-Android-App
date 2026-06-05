@@ -101,6 +101,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     // Material Components – wird für das XML-App-Theme (Theme.Material3.*) benötigt
     implementation(libs.material)

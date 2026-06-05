@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 object Routes {
     // Auth-Graph
     const val SETUP = "setup"
+    const val LOGIN = "login"
+    const val MFA = "mfa" // erwartet Argument: mfa/{mfaToken}
 
     // Haupt-Graph (Container mit Drawer)
     const val MAIN = "main"
