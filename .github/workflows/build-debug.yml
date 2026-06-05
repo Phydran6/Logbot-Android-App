@@ -1,4 +1,4 @@
-name: Build Debug APK
+name: Build & Release
 
 on:
   push:
@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      do_release:
+        description: "Finale Release-Version bauen (sauberer Datum-Uhrzeit-Stempel, echtes Release statt Vorschau)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -41,15 +46,24 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Compute version from Git
+      - name: Compute version
         id: ver
         run: |
           CODE=$(git rev-list --count HEAD)
-          SHA=$(git rev-parse --short HEAD)
-          DATE=$(git show -s --format=%cd --date=format:%Y.%m.%d.%H.%M.%S HEAD)
+          if [ "${{ github.event.inputs.do_release }}" = "true" ]; then
+            # Finale Release: sauberer Zeitstempel = Build-Zeitpunkt (Europe/Berlin), ohne -alpha
+            NAME=$(TZ=Europe/Berlin date +%Y.%m.%d.%H.%M.%S)
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            # Vorschau: Commit-Datum + -alpha + Kurz-SHA
+            SHA=$(git rev-parse --short HEAD)
+            DATE=$(git show -s --format=%cd --date=format:%Y.%m.%d.%H.%M.%S HEAD)
+            NAME="${DATE}-alpha.${SHA}"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
-          echo "name=$DATE-alpha.$SHA" >> "$GITHUB_OUTPUT"
-          echo "App-Version: $DATE-alpha.$SHA (versionCode $CODE)"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "App-Version: $NAME (versionCode $CODE)"
 
       - name: Build debug APK
         run: |
@@ -59,24 +73,44 @@ jobs:
 
       # Diagnose-Hilfe: bei Fehlschlag das Ende des Build-Logs als Commit-Kommentar posten
       # (nutzt das eingebaute GITHUB_TOKEN; Kommentar ist über die öffentliche API lesbar).
-      - name: Collect & rename APK
+      - name: APK einsammeln & umbenennen
         run: |
           mkdir -p out
-          echo "=== APK-Ausgabeverzeichnis ===" | tee -a build.log
           ls -laR app/build/outputs/apk 2>&1 | tee -a build.log || true
           APK="$(find app/build/outputs/apk/debug -name '*.apk' | head -n1)"
           echo "Gefundene APK: '$APK'" | tee -a build.log
           test -n "$APK"
-          SHA_SHORT="${GITHUB_SHA::7}"
-          cp "$APK" "out/logbot-debug-${SHA_SHORT}.apk"
+          cp "$APK" "out/Logbot-${{ steps.ver.outputs.name }}.apk"
 
-      - name: Upload APK artifact
+      - name: APK als Artifact hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: logbot-debug-apk
+          name: Logbot-App
           path: out/*.apk
           if-no-files-found: error
           retention-days: 30
+
+      # Direkter Download: GitHub-Release. Push -> rollende Vorschau (Tag native-latest);
+      # manueller Lauf mit do_release=true -> echtes Release (Tag v<Zeitstempel>).
+      - name: Als Download veröffentlichen (GitHub Release)
+        if: success() && (github.event_name == 'push' || github.event.inputs.do_release == 'true')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER="${{ steps.ver.outputs.name }}"
+          APK="out/Logbot-${VER}.apk"
+          if [ "${{ steps.ver.outputs.release }}" = "true" ]; then
+            gh release create "v${VER}" "$APK" \
+              --title "Logbot ${VER}" \
+              --notes "Native Logbot-App – finale Version ${VER}." \
+              --target native-rewrite || true
+          else
+            gh release delete native-latest --yes --cleanup-tag || true
+            gh release create native-latest "$APK" \
+              --title "Logbot – Vorschau (${VER})" \
+              --notes "Automatischer Vorschau-Build vom Branch native-rewrite zum Testen. Version ${VER}." \
+              --prerelease --target native-rewrite || true
+          fi
 
       # Diagnose: bei Fehlschlag die eigentliche Fehlerursache als Commit-Kommentar posten
       - name: Report error as commit comment
