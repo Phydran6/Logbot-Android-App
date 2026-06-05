@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -52,10 +52,20 @@ jobs:
           echo "App-Version: $DATE-alpha.$SHA (versionCode $CODE)"
 
       - name: Build debug APK
-        run: >
-          ./gradlew assembleDebug --no-daemon --stacktrace
-          -PlogbotVersionCode=${{ steps.ver.outputs.code }}
-          -PlogbotVersionName=${{ steps.ver.outputs.name }}
+        run: |
+          ./gradlew assembleDebug --no-daemon --stacktrace \
+            -PlogbotVersionCode=${{ steps.ver.outputs.code }} \
+            -PlogbotVersionName=${{ steps.ver.outputs.name }} 2>&1 | tee build.log
+
+      # Diagnose-Hilfe: bei Fehlschlag das Ende des Build-Logs als Commit-Kommentar posten
+      # (nutzt das eingebaute GITHUB_TOKEN; Kommentar ist über die öffentliche API lesbar).
+      - name: Report build error as commit comment
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" \
+            -f body="$(tail -c 6000 build.log)" || true
 
       - name: Rename APK with commit SHA
         run: |
