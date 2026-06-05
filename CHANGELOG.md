@@ -52,6 +52,16 @@ Server-Oberfläche nativ nachbaut. Umsetzung in Phasen (siehe Roadmap).
 - Statische `versionName 2026.05.29.22.30.00` / `versionCode 4` entfernt (war der Stand
   der alten WebView-Release und damit im Rewrite irreführend).
 
+### Phase 2b – Auth & Netzwerk (nativ)
+- **DI/Netzwerk-Toolchain**: Hilt + KSP (statt kapt; `android.disallowKotlinSourceSets=false`
+  für AGP-9-Built-in-Kotlin), Retrofit/OkHttp + kotlinx.serialization-Converter.
+- **CredentialStore**: verschlüsselt (EncryptedSharedPreferences) – Instanz-URL, Token, Biometrie-Flag.
+- **Netzwerk**: dynamische Instanz-URL via `HostSelectionInterceptor`, Bearer via `AuthInterceptor`.
+- **Auth-Flow**: Setup (Instanz-URL **oder** QR-App-Login mit Token-Exchange) → Passwort-Login →
+  **MFA** (TOTP/Backup-Code) → Hauptmenü. Rolle aus `/api/auth/me` (Admin-Gating), 401 → Logout.
+- CI postet bei Build-Fehlern die Gradle-Fehlerursache als Commit-Kommentar (Diagnose).
+- *Offen in 2b*: Biometrie-/PIN-App-Lock.
+
 ## [2026.05.29.22.30.00] - 2026-05-29
 
 Stichwort: **App-Lock & Versionierung**
