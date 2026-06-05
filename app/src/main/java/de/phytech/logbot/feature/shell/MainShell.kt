@@ -50,6 +50,8 @@ import de.phytech.logbot.core.navigation.Routes
 import de.phytech.logbot.core.navigation.mainMenuItems
 import de.phytech.logbot.core.util.rememberAppVersionName
 import de.phytech.logbot.feature.common.PlaceholderScreen
+import de.phytech.logbot.feature.dashboard.DashboardScreen
+import de.phytech.logbot.feature.health.HealthScreen
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -145,12 +147,12 @@ fun MainShell(
                 startDestination = Routes.DASHBOARD,
                 modifier = Modifier.padding(padding),
             ) {
-                composable(Routes.DASHBOARD) { PlaceholderScreen("Dashboard", Icons.Filled.Dashboard) }
+                composable(Routes.DASHBOARD) { DashboardScreen() }
                 composable(Routes.LOGS) { PlaceholderScreen("Logs", Icons.Filled.Article) }
                 composable(Routes.AGENTS) { PlaceholderScreen("Agents", Icons.Filled.Devices) }
                 composable(Routes.USERS) { PlaceholderScreen("Users", Icons.Filled.People) }
                 composable(Routes.WEBHOOKS) { PlaceholderScreen("Webhooks", Icons.Filled.Webhook) }
-                composable(Routes.HEALTH) { PlaceholderScreen("Health", Icons.Filled.MonitorHeart) }
+                composable(Routes.HEALTH) { HealthScreen() }
                 composable(Routes.SETTINGS) { PlaceholderScreen("Einstellungen", Icons.Filled.Settings) }
                 composable(Routes.BRANDING) { PlaceholderScreen("Branding", Icons.Filled.Palette) }
             }
