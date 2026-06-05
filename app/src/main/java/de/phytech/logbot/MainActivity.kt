@@ -34,14 +34,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LogbotTheme {
-                LogbotApp()
+                LogbotAppRoot()
             }
         }
     }
 }
 
 @Composable
-private fun LogbotApp() {
+private fun LogbotAppRoot() {
     val nav = rememberNavController()
     NavHost(navController = nav, startDestination = Routes.SETUP) {
         composable(Routes.SETUP) {
