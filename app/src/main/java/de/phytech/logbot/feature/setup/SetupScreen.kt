@@ -21,11 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import de.phytech.logbot.core.util.rememberAppVersionName
 
 @Composable
 fun SetupScreen(
     onContinue: () -> Unit,
 ) {
+    val version = rememberAppVersionName()
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -59,6 +61,12 @@ fun SetupScreen(
             ) {
                 Text("Menü-Gerüst ansehen")
             }
+            Text(
+                text = "v$version",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                modifier = Modifier.padding(top = 24.dp),
+            )
         }
     }
 }

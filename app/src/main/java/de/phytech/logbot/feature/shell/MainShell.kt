@@ -46,6 +46,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import de.phytech.logbot.core.navigation.Routes
 import de.phytech.logbot.core.navigation.mainMenuItems
+import de.phytech.logbot.core.util.rememberAppVersionName
 import de.phytech.logbot.feature.common.PlaceholderScreen
 import kotlinx.coroutines.launch
 
@@ -64,6 +65,7 @@ fun MainShell(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.DASHBOARD
     val currentItem = mainMenuItems.firstOrNull { it.route == currentRoute }
+    val version = rememberAppVersionName()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -106,6 +108,13 @@ fun MainShell(
                         onLogout()
                     },
                     modifier = Modifier.padding(horizontal = 12.dp),
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "v$version",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp),
                 )
             }
         },
