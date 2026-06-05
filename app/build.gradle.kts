@@ -1,4 +1,7 @@
 import java.util.Properties
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 plugins {
     // AGP 9 hat Built-in-Kotlin (kein kotlin.android-Plugin); kotlin.compose
@@ -24,8 +27,8 @@ val hasReleaseSigning = signingProps.getProperty("storeFile") != null
 val buildVersionCode = (project.findProperty("logbotVersionCode") as String?)?.toIntOrNull()?.coerceAtLeast(5)
     ?: 5
 val buildVersionName = (project.findProperty("logbotVersionName") as String?)?.takeIf { it.isNotBlank() }
-    ?: (java.time.ZonedDateTime.now(java.time.ZoneId.of("Europe/Berlin"))
-        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd.HH.mm.ss")) + "-alpha-dev")
+    ?: (ZonedDateTime.now(ZoneId.of("Europe/Berlin"))
+        .format(DateTimeFormatter.ofPattern("yyyy.MM.dd.HH.mm.ss")) + "-alpha-dev")
 
 android {
     namespace = "de.phytech.logbot"
