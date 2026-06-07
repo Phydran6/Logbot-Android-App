@@ -9,8 +9,8 @@ Umsetzung in Phasen, je ~1 Arbeits-Session, damit der Umfang überschaubar bleib
 | **0 – Discovery** | Ist-Zustand der App + Server-API/Screens analysiert, Machbarkeit bestätigt, Tech-Entscheidung (Android-only Compose) | ✅ erledigt |
 | **1 – Architektur & Beschreibung** | [ARCHITECTURE.md](ARCHITECTURE.md), Roadmap, README/CHANGELOG auf native Ausrichtung umgebaut. *Kein Produktiv-Code.* | ✅ erledigt |
 | **2a – Skeleton** | Build modernisiert (Kotlin + Compose), Material-3-Theme, Single-Activity, Navigation-Drawer als Server-Sidebar mit Platzhalter-Screens. WebView entfernt. | ✅ erledigt |
-| **2b – Auth nativ** | Hilt + KSP, Networking-Layer + API-Client, **Auth**: Instanz-URL, Passwort-Login, MFA, QR-App-Login (Token-Exchange), verschlüsselter Token-Speicher; Rollen-Gating + 401-Logout. *(Biometrie-Lock noch offen.)* | 🟦 Login steht |
-| **3a – Read-Screens** | Dashboard (Stats/Charts), Logs (Paging + Filter + Detail), Health, Agents-Liste | offen |
+| **2b – Auth nativ** | Hilt + KSP, Networking-Layer + API-Client, **Auth**: Instanz-URL, Passwort-Login, MFA, QR-App-Login (Token-Exchange), verschlüsselter Token-Speicher; Rollen-Gating + 401-Logout; **Biometrie-/PIN-App-Lock**. | ✅ erledigt |
+| **3a – Read-Screens** | Dashboard ✅, Health ✅, Logs (Live-Liste ✅; Filter/Detail/Paging offen), Agents (offen) | 🟦 teilweise |
 | **3b – Management-Screens** | Users, Webhooks, Agents-Aktionen (Retention/Decommission), Settings, Branding | offen |
 | **4 – Feinschliff** | Performance, Offline/Caching, Pull-to-refresh, Leer-/Fehlerzustände, Polishing, ggf. Cert-Pinning | offen |
 
@@ -20,16 +20,16 @@ Erhalten bleiben (nach Compose portiert):
 - [x] Setup: Instanz-URL eingeben
 - [x] Setup: QR-App-Login (mit korrektem Token-Exchange)
 - [x] Verschlüsselter Token-Speicher
-- [ ] Biometrie-/PIN-App-Lock
+- [x] Biometrie-/PIN-App-Lock
 - [x] 401-Behandlung (Logout/Session-Reset)
 
 Neu nativ (Server-Screens):
 - [x] Login + MFA (TOTP/Backup-Code)
-- [ ] Dashboard
-- [ ] Logs (Liste, Filter, Detail)
+- [x] Dashboard
+- [~] Logs (Live-Liste ✅; Filter, Detail, unendliches Scrollen offen)
 - [ ] Agents
 - [ ] Users
 - [ ] Webhooks
-- [ ] Health
+- [x] Health
 - [ ] Settings
 - [ ] Branding

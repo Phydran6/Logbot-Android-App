@@ -60,7 +60,16 @@ Server-Oberfläche nativ nachbaut. Umsetzung in Phasen (siehe Roadmap).
 - **Auth-Flow**: Setup (Instanz-URL **oder** QR-App-Login mit Token-Exchange) → Passwort-Login →
   **MFA** (TOTP/Backup-Code) → Hauptmenü. Rolle aus `/api/auth/me` (Admin-Gating), 401 → Logout.
 - CI postet bei Build-Fehlern die Gradle-Fehlerursache als Commit-Kommentar (Diagnose).
-- *Offen in 2b*: Biometrie-/PIN-App-Lock.
+- **Biometrie-/PIN-App-Lock**: optionaler Geräte-Lock beim Start (`BiometricPrompt`,
+  Toggle im Drawer; Abbruch schließt die App). MainActivity ist `AppCompatActivity`.
+
+### Phase 3 – Daten-Screens (laufend)
+- **Dashboard** (Live): Log-Statistiken (`/api/logs/stats`).
+- **Health** (Live): System-Ressourcen (`/api/health/detailed`).
+- **Logs** (Live-Liste): neueste 100 Einträge (`/api/logs`) mit Level-Badges.
+- Geteilte Bausteine: `UiState`, `safeApiCall`, `LoadingState`/`ErrorState`/`EmptyState`/`StatCard`.
+- Download als rollende Vorschau-Release (Tag `native-latest`) + Friendly APK-Namen
+  (`Logbot-<version>.apk`); finale Release-Version via `do_release`.
 
 ## [2026.05.29.22.30.00] - 2026-05-29
 
