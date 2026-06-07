@@ -36,7 +36,7 @@ class MainViewModel @Inject constructor(
     var biometricEnabled by mutableStateOf(credentialStore.biometricEnabled)
         private set
 
-    fun setBiometricEnabled(enabled: Boolean) {
+    fun toggleBiometric(enabled: Boolean) {
         if (enabled && !biometricAvailable) return
         credentialStore.biometricEnabled = enabled
         biometricEnabled = enabled

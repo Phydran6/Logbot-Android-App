@@ -130,7 +130,7 @@ fun MainShell(
                         )
                         Switch(
                             checked = viewModel.biometricEnabled,
-                            onCheckedChange = { viewModel.setBiometricEnabled(it) },
+                            onCheckedChange = { viewModel.toggleBiometric(it) },
                         )
                     }
                     Spacer(Modifier.height(8.dp))
