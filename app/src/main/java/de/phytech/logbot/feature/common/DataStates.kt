@@ -56,6 +56,25 @@ fun ErrorState(
 }
 
 @Composable
+fun EmptyState(
+    message: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = message,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
 fun StatCard(
     title: String,
     value: String,

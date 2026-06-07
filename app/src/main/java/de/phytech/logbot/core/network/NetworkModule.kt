@@ -12,6 +12,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import de.phytech.logbot.data.api.AuthApi
+import de.phytech.logbot.data.api.LogsApi
 import de.phytech.logbot.data.api.MonitoringApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -67,4 +68,8 @@ object NetworkModule {
     @Singleton
     fun provideMonitoringApi(retrofit: Retrofit): MonitoringApi =
         retrofit.create(MonitoringApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideLogsApi(retrofit: Retrofit): LogsApi = retrofit.create(LogsApi::class.java)
 }
