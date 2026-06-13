@@ -55,6 +55,7 @@ import de.phytech.logbot.core.navigation.Routes
 import de.phytech.logbot.core.navigation.mainMenuItems
 import de.phytech.logbot.core.util.rememberAppVersionName
 import de.phytech.logbot.feature.common.PlaceholderScreen
+import de.phytech.logbot.feature.agents.AgentsScreen
 import de.phytech.logbot.feature.dashboard.DashboardScreen
 import de.phytech.logbot.feature.health.HealthScreen
 import de.phytech.logbot.feature.logs.LogsScreen
@@ -175,7 +176,7 @@ fun MainShell(
             ) {
                 composable(Routes.DASHBOARD) { DashboardScreen() }
                 composable(Routes.LOGS) { LogsScreen() }
-                composable(Routes.AGENTS) { PlaceholderScreen("Agents", Icons.Filled.Devices) }
+                composable(Routes.AGENTS) { AgentsScreen() }
                 composable(Routes.USERS) { PlaceholderScreen("Users", Icons.Filled.People) }
                 composable(Routes.WEBHOOKS) { PlaceholderScreen("Webhooks", Icons.Filled.Webhook) }
                 composable(Routes.HEALTH) { HealthScreen() }

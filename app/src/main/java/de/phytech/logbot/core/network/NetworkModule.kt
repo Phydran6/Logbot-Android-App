@@ -11,6 +11,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import de.phytech.logbot.data.api.AgentsApi
 import de.phytech.logbot.data.api.AuthApi
 import de.phytech.logbot.data.api.LogsApi
 import de.phytech.logbot.data.api.MonitoringApi
@@ -72,4 +73,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideLogsApi(retrofit: Retrofit): LogsApi = retrofit.create(LogsApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAgentsApi(retrofit: Retrofit): AgentsApi = retrofit.create(AgentsApi::class.java)
 }
