@@ -15,6 +15,7 @@ import de.phytech.logbot.data.api.AgentsApi
 import de.phytech.logbot.data.api.AuthApi
 import de.phytech.logbot.data.api.LogsApi
 import de.phytech.logbot.data.api.MonitoringApi
+import de.phytech.logbot.data.api.UsersApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -77,4 +78,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideAgentsApi(retrofit: Retrofit): AgentsApi = retrofit.create(AgentsApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUsersApi(retrofit: Retrofit): UsersApi = retrofit.create(UsersApi::class.java)
 }

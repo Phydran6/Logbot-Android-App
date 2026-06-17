@@ -59,6 +59,7 @@ import de.phytech.logbot.feature.agents.AgentsScreen
 import de.phytech.logbot.feature.dashboard.DashboardScreen
 import de.phytech.logbot.feature.health.HealthScreen
 import de.phytech.logbot.feature.logs.LogsScreen
+import de.phytech.logbot.feature.users.UsersScreen
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -177,7 +178,7 @@ fun MainShell(
                 composable(Routes.DASHBOARD) { DashboardScreen() }
                 composable(Routes.LOGS) { LogsScreen() }
                 composable(Routes.AGENTS) { AgentsScreen() }
-                composable(Routes.USERS) { PlaceholderScreen("Users", Icons.Filled.People) }
+                composable(Routes.USERS) { UsersScreen() }
                 composable(Routes.WEBHOOKS) { PlaceholderScreen("Webhooks", Icons.Filled.Webhook) }
                 composable(Routes.HEALTH) { HealthScreen() }
                 composable(Routes.SETTINGS) { PlaceholderScreen("Einstellungen", Icons.Filled.Settings) }
