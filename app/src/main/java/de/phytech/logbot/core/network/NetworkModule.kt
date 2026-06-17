@@ -13,9 +13,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import de.phytech.logbot.data.api.AgentsApi
 import de.phytech.logbot.data.api.AuthApi
+import de.phytech.logbot.data.api.BrandingApi
 import de.phytech.logbot.data.api.LogsApi
 import de.phytech.logbot.data.api.MonitoringApi
+import de.phytech.logbot.data.api.SettingsApi
 import de.phytech.logbot.data.api.UsersApi
+import de.phytech.logbot.data.api.WebhooksApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -82,4 +85,19 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideUsersApi(retrofit: Retrofit): UsersApi = retrofit.create(UsersApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideWebhooksApi(retrofit: Retrofit): WebhooksApi =
+        retrofit.create(WebhooksApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideSettingsApi(retrofit: Retrofit): SettingsApi =
+        retrofit.create(SettingsApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideBrandingApi(retrofit: Retrofit): BrandingApi =
+        retrofit.create(BrandingApi::class.java)
 }

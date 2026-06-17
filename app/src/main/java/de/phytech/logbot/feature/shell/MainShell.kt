@@ -56,10 +56,13 @@ import de.phytech.logbot.core.navigation.mainMenuItems
 import de.phytech.logbot.core.util.rememberAppVersionName
 import de.phytech.logbot.feature.common.PlaceholderScreen
 import de.phytech.logbot.feature.agents.AgentsScreen
+import de.phytech.logbot.feature.branding.BrandingScreen
 import de.phytech.logbot.feature.dashboard.DashboardScreen
 import de.phytech.logbot.feature.health.HealthScreen
 import de.phytech.logbot.feature.logs.LogsScreen
+import de.phytech.logbot.feature.settings.SettingsScreen
 import de.phytech.logbot.feature.users.UsersScreen
+import de.phytech.logbot.feature.webhooks.WebhooksScreen
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -179,10 +182,10 @@ fun MainShell(
                 composable(Routes.LOGS) { LogsScreen() }
                 composable(Routes.AGENTS) { AgentsScreen() }
                 composable(Routes.USERS) { UsersScreen() }
-                composable(Routes.WEBHOOKS) { PlaceholderScreen("Webhooks", Icons.Filled.Webhook) }
+                composable(Routes.WEBHOOKS) { WebhooksScreen() }
                 composable(Routes.HEALTH) { HealthScreen() }
-                composable(Routes.SETTINGS) { PlaceholderScreen("Einstellungen", Icons.Filled.Settings) }
-                composable(Routes.BRANDING) { PlaceholderScreen("Branding", Icons.Filled.Palette) }
+                composable(Routes.SETTINGS) { SettingsScreen() }
+                composable(Routes.BRANDING) { BrandingScreen() }
             }
         }
     }
