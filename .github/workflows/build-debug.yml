@@ -3,6 +3,7 @@ name: Build & Release
 on:
   push:
     branches: [main, native-rewrite]
+    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -50,8 +51,12 @@ jobs:
         id: ver
         run: |
           CODE=$(git rev-list --count HEAD)
-          if [ "${{ github.event.inputs.do_release }}" = "true" ]; then
-            # Finale Release: sauberer Zeitstempel = Build-Zeitpunkt (Europe/Berlin), ohne -alpha
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            # Tag v<Zeitstempel> -> finale Release, Version = Tag ohne führendes v
+            NAME="${GITHUB_REF_NAME#v}"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.inputs.do_release }}" = "true" ]; then
+            # Manueller Lauf: sauberer Zeitstempel = Build-Zeitpunkt (Europe/Berlin), ohne -alpha
             NAME=$(TZ=Europe/Berlin date +%Y.%m.%d.%H.%M.%S)
             echo "release=true" >> "$GITHUB_OUTPUT"
           else
@@ -99,7 +104,12 @@ jobs:
         run: |
           VER="${{ steps.ver.outputs.name }}"
           APK="out/Logbot-${VER}.apk"
-          if [ "${{ steps.ver.outputs.release }}" = "true" ]; then
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            # Tag existiert bereits -> Release dafür anlegen (kein --target nötig)
+            gh release create "${{ github.ref_name }}" "$APK" \
+              --title "Logbot ${VER}" \
+              --notes "Native Logbot-App – finale Version ${VER}." || true
+          elif [ "${{ steps.ver.outputs.release }}" = "true" ]; then
             gh release create "v${VER}" "$APK" \
               --title "Logbot ${VER}" \
               --notes "Native Logbot-App – finale Version ${VER}." \

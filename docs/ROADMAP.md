@@ -10,9 +10,9 @@ Umsetzung in Phasen, je ~1 Arbeits-Session, damit der Umfang überschaubar bleib
 | **1 – Architektur & Beschreibung** | [ARCHITECTURE.md](ARCHITECTURE.md), Roadmap, README/CHANGELOG auf native Ausrichtung umgebaut. *Kein Produktiv-Code.* | ✅ erledigt |
 | **2a – Skeleton** | Build modernisiert (Kotlin + Compose), Material-3-Theme, Single-Activity, Navigation-Drawer als Server-Sidebar mit Platzhalter-Screens. WebView entfernt. | ✅ erledigt |
 | **2b – Auth nativ** | Hilt + KSP, Networking-Layer + API-Client, **Auth**: Instanz-URL, Passwort-Login, MFA, QR-App-Login (Token-Exchange), verschlüsselter Token-Speicher; Rollen-Gating + 401-Logout; **Biometrie-/PIN-App-Lock**. | ✅ erledigt |
-| **3a – Read-Screens** | Dashboard ✅, Health ✅, Logs (Live-Liste ✅; Filter/Detail/Paging offen), Agents (offen) | 🟦 teilweise |
-| **3b – Management-Screens** | Users, Webhooks, Agents-Aktionen (Retention/Decommission), Settings, Branding | offen |
-| **4 – Feinschliff** | Performance, Offline/Caching, Pull-to-refresh, Leer-/Fehlerzustände, Polishing, ggf. Cert-Pinning | offen |
+| **3a – Read-Screens** | Dashboard, Health, Logs (Liste + Filter + Detail + Mehr-laden), Agents | ✅ erledigt |
+| **3b – Management-Screens** | Users (CRUD/MFA-Reset), Webhooks (CRUD/Token/URL), Settings (Werte + DB), Branding (Whitelabel), Agents-Löschen | ✅ erledigt |
+| **4 – Feinschliff** | Lade-/Fehler-/Leer-Zustände + Retry überall vorhanden. Optional künftig: Offline-Caching, Pull-to-refresh, Cert-Pinning, Agent-Retention-UI, Branding-Logo-Upload. | 🟦 Grundlagen drin |
 
 ## Funktionsparität – Checkliste
 
@@ -26,10 +26,10 @@ Erhalten bleiben (nach Compose portiert):
 Neu nativ (Server-Screens):
 - [x] Login + MFA (TOTP/Backup-Code)
 - [x] Dashboard
-- [~] Logs (Live-Liste ✅; Filter, Detail, unendliches Scrollen offen)
-- [ ] Agents
-- [ ] Users
-- [ ] Webhooks
+- [x] Logs (Liste, Filter, Detail, Mehr-laden)
+- [x] Agents (Liste + Löschen)
+- [x] Users (CRUD + MFA-Reset)
+- [x] Webhooks (CRUD + Token + Aufruf-URL)
 - [x] Health
-- [ ] Settings
-- [ ] Branding
+- [x] Settings (Werte editieren + DB-Infos)
+- [x] Branding (Whitelabel bearbeiten)

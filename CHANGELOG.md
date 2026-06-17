@@ -69,7 +69,14 @@ Server-Oberfläche nativ nachbaut. Umsetzung in Phasen (siehe Roadmap).
 - **Logs** (Live-Liste): neueste 100 Einträge (`/api/logs`) mit Level-Badges.
 - Geteilte Bausteine: `UiState`, `safeApiCall`, `LoadingState`/`ErrorState`/`EmptyState`/`StatCard`.
 - Download als rollende Vorschau-Release (Tag `native-latest`) + Friendly APK-Namen
-  (`Logbot-<version>.apk`); finale Release-Version via `do_release`.
+  (`Logbot-<version>.apk`); finale Release-Version via `do_release` oder Git-Tag `v*`.
+- **Agents**: Geräteliste (Online-Status, Typ, Aktivität, Log-Anzahl) + Löschen.
+- **Users** (Admin): CRUD + Rolle/Aktiv + MFA-Reset.
+- **Webhooks**: CRUD, kopierbare Aufruf-URL, Token-Regenerierung, Filter.
+- **Settings**: Server-Einstellungen editieren + DB-Infos (Admin).
+- **Branding**: Whitelabel (Texte/Farben/Theme) bearbeiten, verlustfreies Speichern, Reset.
+- **Logs-Ausbau**: Filter (Suche/Level/Host/Source), Detailansicht, „Mehr laden".
+- **Alle Server-Screens nativ abgebildet** — der WebView-Wrapper ist vollständig ersetzt.
 
 ## [2026.05.29.22.30.00] - 2026-05-29
 
