@@ -1,0 +1,54 @@
+name: iOS Signatur einrichten
+
+# Einmalig von Hand starten: Actions -> "iOS Signatur einrichten" -> Run workflow.
+#
+# Erzeugt bei Apple ein Verteilungs-Zertifikat und ein App-Store-Profil fuer
+# de.phytech.logbot und legt beides verschluesselt ins match-Repository.
+# Danach braucht es diesen Lauf nie wieder - Release und Deploy holen die
+# Signatur dort nur noch ab.
+#
+# Ein eigener Mac ist nicht noetig: Der GitHub-Runner ist einer.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signing:
+    name: Zertifikat und Profil erzeugen
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Secrets vollstaendig?
+        env:
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
+        run: bash scripts/check_apple_secrets.sh
+
+      - name: Zugriff auf das match-Repository
+        env:
+          MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+        run: |
+          # Prueft Form der URL, Rechte des Tokens und den git-Zugriff einzeln,
+          # damit die Meldung sagt, WORAN es liegt.
+          bash scripts/check_match_repo.sh
+          echo "GIT_TERMINAL_PROMPT=0" >> "$GITHUB_ENV"
+
+      - name: Signatur erzeugen
+        env:
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+        run: |
+          gem install fastlane --no-document
+          bash scripts/run_fastlane.sh setup_signing

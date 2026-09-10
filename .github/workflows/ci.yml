@@ -1,0 +1,100 @@
+name: CI
+
+# Bei jedem Push und jedem Pull Request: bauen und testen.
+#
+# Der Debug-APK haengt 30 Tage als Artefakt am Lauf - damit laesst sich jeder
+# Stand ausprobieren, ohne ein Release zu erzeugen.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android bauen und testen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 21 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Android SDK einrichten
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+
+      - name: Gradle-Zwischenstaende puffern
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'android/gradle/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: gradlew ausfuehrbar machen
+        run: chmod +x android/gradlew
+
+      - name: Unit-Tests
+        working-directory: android
+        run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
+
+      - name: Lint
+        working-directory: android
+        run: ./gradlew lintDebug --no-daemon
+        continue-on-error: true
+
+      - name: Debug-APK bauen
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: APK mit Commit-Kuerzel benennen
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+             "out/logbot-debug-${GITHUB_SHA::7}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: logbot-debug-apk
+          path: out/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+  ios:
+    name: iOS bauen (unsigniert)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode-Projekt erzeugen
+        run: bash scripts/ensure_ios_project.sh
+
+      # Ohne Signatur: Die CI soll pruefen, ob der Swift-Code uebersetzt -
+      # dafuer braucht es keinen Apple-Zugang. Signiert wird erst im Release.
+      - name: Uebersetzen
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Logbot.xcodeproj \
+            -scheme Logbot \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_STYLE=Automatic \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            -quiet

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ab 600 dp Breite (grosse Telefone quer, kleine Tablets). -->
+<resources>
+    <dimen name="content_padding_h">48dp</dimen>
+    <dimen name="content_bleed_h">-48dp</dimen>
+</resources>

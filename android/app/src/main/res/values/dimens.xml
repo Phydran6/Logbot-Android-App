@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Seitenrand des Inhalts.
+
+    Statt eigener Layouts fuer Tablets wird auf breiten Geraeten nur der Rand
+    groesser. Eine Textzeile ueber die volle Breite eines 10-Zoll-Geraets
+    liest sich schlecht; eine Spalte mit mehr Luft daneben liest sich gut.
+    Die Werte gelten fuer alle Bereiche, damit nichts gegeneinander versetzt
+    steht.
+
+    `content_bleed_h` ist der negative Gegenwert: Listen, die im gepolsterten
+    Bereich stecken, ziehen sich damit wieder auf die volle Breite.
+-->
+<resources>
+    <dimen name="content_padding_h">16dp</dimen>
+    <dimen name="content_bleed_h">-16dp</dimen>
+</resources>

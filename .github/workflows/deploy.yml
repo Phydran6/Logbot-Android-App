@@ -1,0 +1,163 @@
+name: Deploy
+
+# Verteilung an die Testkanaele:
+#   Android -> Google Play, Track "internal"
+#   iOS     -> TestFlight
+#
+# Laeuft automatisch nach einem erfolgreichen Release oder von Hand.
+# Ohne hinterlegte Store-Secrets ueberspringen sich die Schritte sauber.
+
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Zielplattform"
+        required: true
+        default: both
+        type: choice
+        options: [both, android, ios]
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Google Play (internal)
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.target == 'both' || inputs.target == 'android') ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Play-Secrets vorhanden?
+        id: gate
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$PLAY_JSON" ]; then
+            echo "::warning::PLAY_SERVICE_ACCOUNT_JSON fehlt - Deploy uebersprungen."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::ANDROID_KEYSTORE_BASE64 fehlt - ohne Upload-Signatur nimmt Play nichts an."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-java@v4
+        if: steps.gate.outputs.ok == 'true'
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+        if: steps.gate.outputs.ok == 'true'
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+
+      - name: Signatur- und Store-Dateien schreiben
+        if: steps.gate.outputs.ok == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          cat > android/signing.properties <<EOF
+          storeFile=upload-keystore.jks
+          storePassword=$STORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+          echo "$PLAY_JSON" > android/play-service-account.json
+
+      - name: Version aus dem letzten Tag lesen
+        if: steps.gate.outputs.ok == 'true'
+        id: v
+        run: |
+          git fetch --tags --quiet || true
+          tag="$(git describe --tags --abbrev=0 2>/dev/null || echo v1.0.0)"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: AAB bauen und hochladen
+        if: steps.gate.outputs.ok == 'true'
+        run: |
+          chmod +x android/gradlew
+          cd android
+          code=$((100 + ${{ github.run_number }}))
+          ./gradlew bundleRelease --no-daemon \
+            -Plogbot.versionName="${{ steps.v.outputs.version }}" \
+            -Plogbot.versionCode="$code"
+          gem install fastlane --no-document
+          fastlane internal
+
+  ios:
+    name: TestFlight
+    runs-on: macos-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.target == 'both' || inputs.target == 'ios') ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apple-Secrets vorhanden?
+        id: gate
+        env:
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
+        run: |
+          if bash scripts/check_apple_secrets.sh --soft; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Apple-Zugang unvollstaendig - TestFlight-Deploy uebersprungen."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Zugriff auf das match-Repository
+        if: steps.gate.outputs.ok == 'true'
+        env:
+          MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+        run: |
+          bash scripts/check_match_repo.sh
+          echo "GIT_TERMINAL_PROMPT=0" >> "$GITHUB_ENV"
+
+      - name: Version aus dem letzten Tag lesen
+        if: steps.gate.outputs.ok == 'true'
+        id: v
+        run: |
+          git fetch --tags --quiet || true
+          tag="$(git describe --tags --abbrev=0 2>/dev/null || echo v1.0.0)"
+          version="${tag#v}"
+          # Apple nimmt kein `-beta.2` in CFBundleShortVersionString.
+          echo "ios_version=${version%%-*}" >> "$GITHUB_OUTPUT"
+
+      - name: Bauen und an TestFlight schicken
+        if: steps.gate.outputs.ok == 'true'
+        env:
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+        run: |
+          gem install fastlane --no-document
+          # Ueber das Skript, nicht direkt: Es fasst einen Fehler als
+          # Annotation zusammen. Die Protokolle eines Laufs sind nur nach
+          # Anmeldung lesbar, Annotationen stehen auf der Zusammenfassung.
+          bash scripts/run_fastlane.sh beta \
+            version:"${{ steps.v.outputs.ios_version }}" \
+            build_number:"${{ github.run_number }}"

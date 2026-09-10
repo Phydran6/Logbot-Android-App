@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Eine Logzeile.
+
+    Die Nachricht steht oben und darf drei Zeilen lang werden - sie ist der
+    Grund, warum jemand hinschaut. Uhrzeit, Host und Quelle stehen klein
+    darunter. Der Schweregrad ist ein Farbstreifen links, keine weitere Spalte.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:orientation="horizontal"
+    android:paddingLeft="@dimen/content_padding_h"
+    android:paddingRight="@dimen/content_padding_h"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
+
+    <View
+        android:id="@+id/severityStripe"
+        android:layout_width="3dp"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="12dp"
+        android:minHeight="36dp" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/logMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="3"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+        <TextView
+            android:id="@+id/logMeta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:textSize="11sp"
+            android:textColor="?android:attr/textColorTertiary" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/logLevel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:letterSpacing="0.06"
+        android:textSize="10sp"
+        android:textStyle="bold" />
+</LinearLayout>

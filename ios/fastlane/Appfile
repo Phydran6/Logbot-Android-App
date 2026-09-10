@@ -1,0 +1,8 @@
+app_identifier("de.phytech.logbot")
+
+# Team-ID (bei Apple "App ID Prefix"). Kein Geheimnis - sie steht in jedem
+# Provisioning-Profil und in der ExportOptions.plist.
+team_id("352N56D836")
+
+# Kein apple_id und kein itc_team_id: Die Anmeldung laeuft ueber den
+# App-Store-Connect-API-Key, der beides ersetzt.

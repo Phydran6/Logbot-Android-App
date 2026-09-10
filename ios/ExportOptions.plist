@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Export-Einstellungen fuer den Archiv-Export.
+
+  Enthaelt kein Geheimnis: Die Team-ID steht in jedem Provisioning-Profil.
+  Das Profil selbst legt `fastlane match` vor dem Build in den Schluesselbund.
+-->
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>app-store-connect</string>
+
+	<key>teamID</key>
+	<string>352N56D836</string>
+
+	<key>signingStyle</key>
+	<string>manual</string>
+
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>de.phytech.logbot</key>
+		<string>match AppStore de.phytech.logbot</string>
+	</dict>
+
+	<key>uploadSymbols</key>
+	<true/>
+
+	<key>destination</key>
+	<string>export</string>
+</dict>
+</plist>

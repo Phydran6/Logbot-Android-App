@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dieselben Bedeutungen, heller: auf dunklem Grund braucht Farbe mehr
+     Helligkeit, um denselben Kontrast zu erreichen. -->
+<resources>
+    <color name="severity_error">#EF5350</color>
+    <color name="severity_warn">#FFA726</color>
+    <color name="severity_info">#4FC3F7</color>
+    <color name="severity_debug">#90A4AE</color>
+    <color name="severity_ok">#66BB6A</color>
+</resources>

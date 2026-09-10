@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Alle sichtbaren Texte der App an einer Stelle.
+
+    Deutsch ist die Standardsprache. Eine Uebersetzung braucht nur eine
+    weitere Datei (values-en/strings.xml), im Code aendert sich nichts.
+-->
+<resources>
+    <string name="app_name">Logbot</string>
+
+    <!-- Bereiche in der Leiste unten -->
+    <string name="nav_status">Status</string>
+    <string name="nav_logs">Logs</string>
+    <string name="nav_mail">Mail</string>
+    <string name="nav_web">Weboberfläche</string>
+
+    <!-- Überlaufmenü -->
+    <string name="action_biometric">App-Sperre</string>
+    <string name="action_disconnect">Verbindung trennen</string>
+    <string name="action_about">Über Logbot</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="disconnect_confirm">Instanz-URL und Token werden vom Gerät gelöscht. Zum Weiterarbeiten ist eine neue Einrichtung nötig.</string>
+    <string name="about_body">Version %1$s\n\nVerbunden mit:\n%2$s</string>
+    <string name="biometric_unavailable">Auf diesem Gerät ist weder Biometrie noch eine Gerätesperre eingerichtet.</string>
+
+    <!-- Setup -->
+    <string name="setup_subtitle">Instanz-URL und Auth-Token eingeben\noder QR-Code scannen</string>
+    <string name="hint_instance_url">Instanz-URL (https://…)</string>
+    <string name="hint_auth_token">Auth-Token</string>
+    <string name="btn_connect">Verbinden</string>
+    <string name="btn_scan_qr">QR-Code scannen</string>
+    <string name="qr_scan_prompt">Logbot QR-Code scannen</string>
+
+    <!-- App-Sperre -->
+    <string name="biometric_prompt_title">Logbot entsperren</string>
+    <string name="biometric_prompt_subtitle">Mit Fingerabdruck, Gesicht oder Geräte-PIN bestätigen</string>
+    <string name="setup_biometric_lock">App nach Anmeldung mit Biometrie sperren</string>
+
+    <!-- Status -->
+    <string name="status_checking">Server wird geprüft…</string>
+    <string name="status_reachable">Server läuft</string>
+    <string name="status_degraded">Server eingeschränkt</string>
+    <string name="status_unreachable">Server nicht erreichbar</string>
+    <string name="status_detail">Version %1$s · seit %2$s</string>
+    <string name="status_load">Auslastung</string>
+    <string name="status_cpu">Prozessor</string>
+    <string name="status_memory">Arbeitsspeicher</string>
+    <string name="status_disk">Speicherplatz</string>
+    <string name="status_percent">%1$d %%</string>
+    <string name="status_database">Datenbank</string>
+    <string name="status_db_ok">verbunden</string>
+    <string name="status_db_down">getrennt</string>
+    <string name="status_agents">Agenten online</string>
+    <string name="status_agents_value">%1$d von %2$d</string>
+    <string name="status_logs_24h">Logs (24 h)</string>
+    <string name="status_logs_total">Logs gesamt</string>
+    <string name="status_error_auth">Der Token wird nicht mehr akzeptiert. Unter „Verbindung trennen“ neu einrichten.</string>
+    <string name="status_error_generic">Der Server antwortet nicht. Verbindung, VPN und Erreichbarkeit der Instanz prüfen.</string>
+
+    <!-- Logs -->
+    <string name="logs_search_hint">In Nachrichten suchen</string>
+    <string name="logs_filter_any_severity">Alle Stufen</string>
+    <string name="logs_filter_any_category">Alle Typen</string>
+    <string name="logs_summary_all">%1$s Einträge</string>
+    <string name="logs_summary_filtered">%1$s Treffer</string>
+    <string name="logs_empty">Keine Einträge für diese Auswahl.</string>
+    <string name="logs_no_message">(keine Nachricht)</string>
+    <string name="logs_copied">In die Zwischenablage kopiert</string>
+
+    <!-- Detailansicht -->
+    <string name="detail_when">Zeitpunkt</string>
+    <string name="detail_host">Host</string>
+    <string name="detail_source">Quelle</string>
+    <string name="detail_raw">Rohtext</string>
+    <string name="detail_copy">Nachricht kopieren</string>
+
+    <!-- Mail und Postfix -->
+    <string name="mail_postfix">Postfix</string>
+    <string name="mail_postfix_running">Dienst läuft</string>
+    <string name="mail_postfix_stopped">Dienst läuft nicht</string>
+    <string name="mail_queue_value">%1$d in der Warteschlange · %2$d zurückgestellt</string>
+    <string name="mail_actions">Aktionen</string>
+    <string name="mail_recent">Letzte Mail-Logzeilen</string>
+    <string name="mail_no_logs">Keine Mail-Logzeilen vorhanden.</string>
+    <string name="mail_not_supported">Dieser Serverstand liefert noch keinen Postfix-Zustand. Die Logzeilen unten funktionieren trotzdem.</string>
+    <string name="mail_status_failed">Postfix-Zustand konnte nicht geladen werden.</string>
+    <string name="mail_open_web">Einstellungen in der Weboberfläche</string>
+    <string name="mail_reset_title">Passwort zurücksetzen</string>
+    <string name="mail_reset_send">Mail senden</string>
+    <string name="mail_reset_explain">Der Server schickt eine Mail mit Rücksetz-Link über Postfix. Ob es das Konto gibt, verrät die Antwort absichtlich nicht.</string>
+    <string name="mail_reset_hint">Benutzername oder E-Mail</string>
+    <string name="mail_reset_not_supported">Dieser Serverstand kennt den Reset per Mail noch nicht. Ein Administrator kann das Passwort in der Weboberfläche unter „Benutzer“ ändern.</string>
+
+    <!-- Fehlermeldungen -->
+    <string name="error_url_required">Bitte URL eingeben</string>
+    <string name="error_url_invalid">URL muss mit https:// beginnen</string>
+    <string name="error_session_expired">Sitzung abgelaufen – bitte Zugangsdaten neu eingeben</string>
+    <string name="error_token_required">Bitte Token eingeben</string>
+    <string name="error_qr_invalid">Ungültiger QR-Code – erwartet: {\"url\":\"…\",\"token\":\"…\"}</string>
+    <string name="error_camera_permission">Kamera-Berechtigung wird für QR-Scan benötigt</string>
+</resources>

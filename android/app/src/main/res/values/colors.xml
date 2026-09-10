@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Farben der App.
+
+    Die Oberflaeche selbst nimmt die Material3-Palette des Systems - nur der
+    Schweregrad braucht feste Farben, weil er eine Bedeutung traegt und nicht
+    mit dem Systemakzent wandern darf.
+
+    Werte sind fuer den hellen Modus gewaehlt; values-night/colors.xml haelt
+    die aufgehellten Gegenstuecke fuer dunkle Hintergruende.
+-->
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="severity_error">#D32F2F</color>
+    <color name="severity_warn">#ED6C02</color>
+    <color name="severity_info">#0288D1</color>
+    <color name="severity_debug">#78909C</color>
+    <color name="severity_ok">#2E7D32</color>
+</resources>
