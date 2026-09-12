@@ -262,6 +262,32 @@ jobs:
         with:
           path: artifacts
 
+      # Veraltete Dateien am Release entfernen, bevor die neuen hochgehen.
+      # Ein zweiter Lauf derselben Version laedt sonst nur dazu, und am
+      # Release haengen zwei Pakete - etwa ein unsigniertes von frueher neben
+      # dem signierten von jetzt. Wer dann das falsche laedt, hat eine Datei,
+      # die sich nicht installieren laesst.
+      - name: Veraltete Release-Dateien entfernen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v${{ needs.prepare.outputs.version }}"
+          gh release view "$tag" --json assets --jq '.assets[].name' 2>/dev/null > alt.txt || true
+          [ -s alt.txt ] || { echo "Noch kein Release unter $tag - nichts zu entfernen."; exit 0; }
+
+          find artifacts -type f \( -name '*.apk' -o -name '*.aab' -o -name '*.ipa' \) \
+            -printf '%f\n' | sort -u > neu.txt
+          echo "Kommt jetzt hoch:"; sed 's/^/  /' neu.txt
+
+          while read -r name; do
+            [ -n "$name" ] || continue
+            if ! grep -qxF "$name" neu.txt; then
+              echo "  entferne veraltet: $name"
+              gh release delete-asset "$tag" "$name" --yes || true
+            fi
+          done < alt.txt
+        working-directory: ${{ github.workspace }}
+
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.prepare.outputs.version }}
