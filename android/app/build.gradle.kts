@@ -51,8 +51,22 @@ android {
 
     buildTypes {
         release {
-            if (hasReleaseSigning) {
-                signingConfig = signingConfigs.getByName("release")
+            // Ohne signing.properties faellt der Build auf die Debug-Signatur
+            // zurueck, statt unsigniert zu bleiben. Grund: Ein unsigniertes APK
+            // laesst sich auf keinem Geraet installieren - das Release waere
+            // damit wertlos. Mit der Rueckfall-Signatur ist es installierbar,
+            // bleibt aber ein Release-Build (verkleinert, nicht debuggbar).
+            //
+            // Was der Rueckfall NICHT kann: Der Debug-Schluessel entsteht auf
+            // jedem Rechner neu. Zwei so gebaute Releases tragen darum
+            // verschiedene Signaturen, und Android verweigert das Ersetzen -
+            // man muss die App neu installieren. Fuer den Play Store ist er
+            // ohnehin nicht geeignet. Sobald die Secrets hinterlegt sind,
+            // greift automatisch wieder die echte Signatur.
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
             }
             isMinifyEnabled = true
             proguardFiles(

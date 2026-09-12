@@ -63,9 +63,27 @@ aus Tag und Lauf-Nummer. Die Werte in `android/app/build.gradle.kts` und
 | 5 | `deploy.yml` | AAB → Play-Track `internal`, IPA → TestFlight |
 
 Fehlen Store-Secrets, überspringen sich die betroffenen Schritte mit einer
-Warnung. Die Kette bleibt grün, es entstehen unsignierte Artefakte — das APK
-heißt dann `Logbot-<version>-android-unsigniert.apk`, damit am Dateinamen
-steht, was man vor sich hat.
+Warnung. Die Kette bleibt grün.
+
+### Ohne Keystore: Rückfall auf die Debug-Signatur
+
+Ein **unsigniertes** APK lässt sich auf keinem Gerät installieren — ein Release
+mit so einer Datei wäre wertlos. Fehlt `ANDROID_KEYSTORE_BASE64`, signiert der
+Build deshalb mit der Debug-Signatur statt gar nicht
+([`android/app/build.gradle.kts`](../android/app/build.gradle.kts)). Heraus
+kommt ein normaler Release-Build — verkleinert, nicht debuggbar — der sich
+installieren lässt. Die Datei heißt dann `Logbot-<version>-android-testsignatur.apk`.
+
+Zwei Grenzen hat dieser Rückfall, und beide sind hart:
+
+| | |
+|:--|:--|
+| **Kein Play Store** | Google nimmt ein so signiertes Paket nicht als Upload-Schlüssel an |
+| **Kein Update-Pfad** | Der Debug-Schlüssel entsteht auf jedem Rechner neu. Zwei Releases tragen verschiedene Signaturen, Android verweigert das Ersetzen — einmal deinstallieren, dann neu installieren |
+
+Sobald die vier Android-Secrets stehen, greift beim nächsten Lauf automatisch
+die echte Signatur, und die Datei heißt wieder `Logbot-<version>-android.apk`.
+Am Build selbst ändert sich nichts.
 
 ### Ohne Tag: der Knopf in der Oberfläche
 

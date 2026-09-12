@@ -10,6 +10,10 @@ gewechselt wurde, steht in [RELEASE.md](RELEASE.md#versionsnummern).
 
 ## [Unreleased]
 
+### Behoben
+- Ohne hinterlegten Keystore blieb das Release-APK unsigniert und ließ sich damit auf keinem Gerät installieren — das Release war praktisch wertlos. Der Build fällt jetzt auf die Debug-Signatur zurück statt gar nicht zu signieren; heraus kommt ein normaler Release-Build (verkleinert, nicht debuggbar), der sich installieren lässt, unter dem Namen `Logbot-<version>-android-testsignatur.apk`. Für den Play Store taugt er nicht, und zwischen zwei so gebauten Releases gibt es keinen Update-Pfad — beides steht in [RELEASE.md](RELEASE.md#ohne-keystore-rückfall-auf-die-debug-signatur). Mit hinterlegten Secrets greift unverändert die echte Signatur.
+
+
 ## [1.0.0] - 2026-09-10
 
 Stichwort: **Native Bereiche, iOS und Store-Vorbereitung**

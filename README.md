@@ -95,12 +95,16 @@ wird.
 | **Änderungen** | [Changelog](docs/CHANGELOG.md) | Jede Version, nachvollziehbar |
 
 > [!NOTE]
-> Solange die Signatur-Secrets im Repository fehlen, heißen die Dateien im
-> Release `…-unsigniert.apk` bzw. `…-unsigniert.ipa`. Android installiert ein
-> unsigniertes Paket nicht, und Play nimmt es nicht an — das ist kein Fehler im
-> Release, sondern der angekündigte Rückfall. Was einzutragen ist, steht in
-> [docs/RELEASE.md](docs/RELEASE.md#github-secrets); danach genügt ein erneuter
-> Lauf von *Actions → Release*.
+> Solange die Signatur-Secrets im Repository fehlen, heißt das Paket im Release
+> `…-android-testsignatur.apk`. Es **lässt sich installieren** — es ist ein
+> normaler Release-Build, nur mit der Debug-Signatur statt einer eigenen.
+>
+> Zwei Dinge kann es nicht: in den Play Store, und ein früheres Release
+> ersetzen (die Debug-Signatur entsteht bei jedem Bau neu, Android verweigert
+> dann das Überschreiben — einmal deinstallieren genügt). Sobald die vier
+> Secrets aus [docs/RELEASE.md](docs/RELEASE.md#github-secrets) hinterlegt sind,
+> greift beim nächsten Lauf automatisch die echte Signatur und die Datei heißt
+> wieder `…-android.apk`.
 
 ## Aufbau des Repositorys
 
