@@ -115,11 +115,23 @@ jobs:
         run: |
           # Am Dateinamen soll stehen, was man geladen hat: Programm, Version
           # und wofuer die Datei gedacht ist.
+          #
+          # Ohne Keystore heisst das APK app-release-unsigned.apk statt
+          # app-release.apk. Das ist kein Fehler, sondern der angekuendigte
+          # Rueckfall - der Name sagt es dann auch im Release.
           v="${{ needs.prepare.outputs.version }}"
+          out=android/app/build/outputs
           mkdir -p release
-          cp android/app/build/outputs/apk/release/app-release.apk \
-             "release/Logbot-${v}-android.apk"
-          cp android/app/build/outputs/bundle/release/app-release.aab \
+
+          if [ -f "$out/apk/release/app-release.apk" ]; then
+            cp "$out/apk/release/app-release.apk" "release/Logbot-${v}-android.apk"
+          else
+            echo "::warning::Kein signiertes APK - es wird die unsignierte Fassung veroeffentlicht."
+            cp "$out/apk/release/app-release-unsigned.apk" \
+               "release/Logbot-${v}-android-unsigniert.apk"
+          fi
+
+          cp "$out/bundle/release/app-release.aab" \
              "release/Logbot-${v}-android-playstore.aab"
           ls -lh release
 

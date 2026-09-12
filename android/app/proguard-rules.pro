@@ -21,3 +21,11 @@
 # Zeilennummern in Stack Traces erhalten (wichtig für die Play Console)
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# ─── JS-Bruecke zur Weboberflaeche ────────────────────────────────────────────
+# Die Methoden werden nur aus JavaScript aufgerufen, R8 sieht keinen Aufrufer.
+# Die AGP-Standardregeln decken @JavascriptInterface bereits ab - hier noch
+# einmal ausdruecklich, weil ein stiller Verlust erst auf dem Geraet auffiele.
+-keepclassmembers class de.phytech.logbot.LogbotBridge {
+    @android.webkit.JavascriptInterface <methods>;
+}
