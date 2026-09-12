@@ -97,7 +97,7 @@ class MailFragment : Fragment(R.layout.fragment_mail) {
 
         client.logs(LogQuery(page = 1, pageSize = 40, category = "mail")) { result ->
             if (!isAdded) return@logs
-            val entries = (result as? ApiResult.Ok)?.value?.items.orEmpty()
+            val entries = if (result is ApiResult.Ok) result.value.items else emptyList()
             adapter.submitList(LogAdapter.rowsOf(entries).first)
             view?.findViewById<TextView>(R.id.mailLogEmpty)?.visibility =
                 if (entries.isEmpty()) View.VISIBLE else View.GONE

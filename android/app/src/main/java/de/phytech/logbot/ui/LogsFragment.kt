@@ -98,7 +98,7 @@ class LogsFragment : Fragment(R.layout.fragment_logs) {
     private fun loadFilterOptions() {
         api?.filterOptions { result ->
             if (!isAdded) return@filterOptions
-            val options = (result as? ApiResult.Ok)?.value ?: FilterOptions.EMPTY
+            val options = if (result is ApiResult.Ok) result.value else FilterOptions.EMPTY
             fillChips(severityChips, options.severities, R.string.logs_filter_any_severity) { key ->
                 query = query.copy(minSeverity = key, page = 1); reload()
             }

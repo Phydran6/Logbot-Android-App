@@ -76,7 +76,9 @@ class LogDetailSheet : BottomSheetDialogFragment() {
 
         api.logDetail(id) { result ->
             if (!isAdded) return@logDetail
-            val raw = (result as? ApiResult.Ok)?.value?.rawMessage.orEmpty()
+            // Kein `as? ApiResult.Ok`: Der generische Typ liesse sich dort nur
+            // aus dem Zusammenhang erraten. Ein is-Test ist eindeutig.
+            val raw = if (result is ApiResult.Ok) result.value.rawMessage else ""
             if (raw.isBlank()) return@logDetail
             view.findViewById<View>(R.id.detailRawBlock).visibility = View.VISIBLE
             view.findViewById<TextView>(R.id.detailRaw).text = raw
