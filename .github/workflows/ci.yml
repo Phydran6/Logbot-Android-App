@@ -21,6 +21,9 @@ jobs:
   android:
     name: Android bauen und testen
     runs-on: ubuntu-latest
+    # Ohne Grenze haengt ein blockierter Lauf bis zum Standard-Limit von
+    # sechs Stunden und blockiert dabei die Nebenlaeufigkeitsgruppe.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -47,18 +50,12 @@ jobs:
       - name: gradlew ausfuehrbar machen
         run: chmod +x android/gradlew
 
-      - name: Unit-Tests
+      # Ein Gradle-Aufruf statt drei: Die Konfigurationsphase laeuft damit
+      # einmal statt dreimal, und das ist bei einem kalten Puffer der
+      # teuerste Teil. Lint bricht nicht ab (siehe app/build.gradle.kts).
+      - name: Tests, Lint und Debug-APK
         working-directory: android
-        run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
-
-      - name: Lint
-        working-directory: android
-        run: ./gradlew lintDebug --no-daemon
-        continue-on-error: true
-
-      - name: Debug-APK bauen
-        working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew testDebugUnitTest lintDebug assembleDebug --no-daemon --stacktrace
 
       - name: APK mit Commit-Kuerzel benennen
         run: |
@@ -76,6 +73,7 @@ jobs:
   ios:
     name: iOS bauen (unsigniert)
     runs-on: macos-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
