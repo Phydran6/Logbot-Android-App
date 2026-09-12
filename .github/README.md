@@ -10,7 +10,7 @@ Vier Abläufe. Einer läuft ständig, einer bei jedem Tag, zwei auf Zuruf.
 
 | Ablauf | Wann | Was passiert |
 |:--|:--|:--|
-| [`ci.yml`](workflows/ci.yml) | jeder Push, jeder Pull Request | Android: Unit-Tests und Debug-APK (30 Tage als Artefakt). iOS: unsigniert übersetzen |
+| [`ci.yml`](workflows/ci.yml) | jeder Push, jeder Pull Request | Android: Unit-Tests, Lint, Debug-APK (30 Tage als Artefakt). iOS: unsigniert übersetzen |
 | [`release.yml`](workflows/release.yml) | Tag `v*.*.*` | Signiertes AAB + APK, IPA, GitHub-Release mit Changelog-Notizen |
 | [`deploy.yml`](workflows/deploy.yml) | nach erfolgreichem Release, oder von Hand | AAB → Play-Track `internal`, IPA → TestFlight |
 | [`ios-signing.yml`](workflows/ios-signing.yml) | einmalig, von Hand | Erzeugt Apple-Zertifikat und -Profil im match-Repository |
@@ -18,22 +18,22 @@ Vier Abläufe. Einer läuft ständig, einer bei jedem Tag, zwei auf Zuruf.
 
 ---
 
-## Warum kein Lint in der CI
+## Ein Gradle-Aufruf, nicht drei
 
-`lintDebug` blieb unter AGP 9.1 auf dem Runner hängen und lief in die
-Zeitgrenze, während Unit-Tests und Debug-Build zusammen in anderthalb Minuten
-durch waren. Ein Ablauf, der zuverlässig hängt, prüft nichts — er hält nur
-die Nebenläufigkeitsgruppe besetzt.
+Unit-Tests, Lint und der Debug-Build laufen in einem einzigen
+`./gradlew`-Aufruf. Drei Aufrufe hießen dreimal Konfigurationsphase, und die
+ist bei kaltem Puffer der teuerste Teil des Laufs.
 
-Lint läuft deshalb lokal auf Zuruf:
+Damit Lint dabei nicht den ganzen Lauf stoppt, steht er auf
+`abortOnError = false`
+([`android/app/build.gradle.kts`](../android/app/build.gradle.kts)): Ein
+Hinweis auf eine veraltete API soll gemeldet werden, nicht den Build einer
+App anhalten, die läuft. Der Bericht landet unter
+`android/app/build/reports/lint-results-debug.html`.
 
-```bash
-cd android && ./gradlew lintDebug
-```
-
-Dort bricht er nicht ab (`abortOnError = false` in
-[`android/app/build.gradle.kts`](../android/app/build.gradle.kts)), der
-Bericht landet unter `android/app/build/reports/lint-results-debug.html`.
+Jeder Job hat außerdem eine Zeitgrenze (45 Minuten Android, 30 Minuten iOS).
+Ohne sie liefe ein blockierter Lauf bis zum Standard-Limit von sechs Stunden
+und hielte solange die Nebenläufigkeitsgruppe besetzt.
 
 ---
 
