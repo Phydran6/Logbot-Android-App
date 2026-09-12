@@ -31,7 +31,7 @@ Stichwort: **Native Bereiche, iOS und Store-Vorbereitung**
 - `versionName` und `versionCode` kommen aus der CI (`-Plogbot.versionName`, `-Plogbot.versionCode`); der `versionCode` ist `100 + Lauf-Nummer` und bleibt damit über der zuletzt von Hand gebauten 4.
 - Zugangsdaten-Zugriff aus der `MainActivity` in `data/Credentials` herausgelöst; `SetupActivity` und `LogbotBridge` nutzen ihn mit.
 - Die Versionsanzeige über der WebView ist weg — die Version steht im Überlaufmenü unter „Über Logbot".
-- `build-debug.yml` heißt jetzt `ci.yml` und läuft bei jedem Push und jedem Pull Request, mit Unit-Tests, Lint und einem unsignierten iOS-Übersetzungslauf.
+- `build-debug.yml` heißt jetzt `ci.yml` und läuft bei jedem Push und jedem Pull Request, mit Unit-Tests, Debug-APK und einem unsignierten iOS-Übersetzungslauf. Lint bleibt draußen: Die Aufgabe blieb unter AGP 9.1 auf dem Runner hängen, während Tests und Build in anderthalb Minuten durch waren — sie läuft lokal auf Zuruf und bricht dort nicht mehr ab.
 - Breite Geräte bekommen mehr Seitenrand statt eines zweiten Layouts (`values-w600dp`, `values-w840dp`).
 
 ### Entfernt
