@@ -272,8 +272,26 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="v${{ needs.prepare.outputs.version }}"
-          gh release view "$tag" --json assets --jq '.assets[].name' 2>/dev/null > alt.txt || true
-          [ -s alt.txt ] || { echo "Noch kein Release unter $tag - nichts zu entfernen."; exit 0; }
+
+          # --repo ist Pflicht: Dieser Job checkt das Repository nicht aus,
+          # es gibt also kein git-Remote, aus dem gh es ableiten koennte.
+          # Ohne den Schalter liefert gh nichts und der Schritt haelt das
+          # faelschlich fuer "es gibt noch kein Release".
+          repo="${{ github.repository }}"
+
+          gh release view "$tag" --repo "$repo" --json assets --jq '.assets[].name' > alt.txt 2> fehler.txt || true
+          if [ ! -s alt.txt ]; then
+            if grep -qi "release not found" fehler.txt; then
+              echo "Noch kein Release unter $tag - nichts zu entfernen."
+              exit 0
+            fi
+            if [ -s fehler.txt ]; then
+              echo "::error::Bestandsaufnahme des Releases gescheitert:"; cat fehler.txt
+              exit 1
+            fi
+            echo "Release $tag hat noch keine Dateien - nichts zu entfernen."
+            exit 0
+          fi
 
           find artifacts -type f \( -name '*.apk' -o -name '*.aab' -o -name '*.ipa' \) \
             -printf '%f\n' | sort -u > neu.txt
@@ -283,7 +301,7 @@ jobs:
             [ -n "$name" ] || continue
             if ! grep -qxF "$name" neu.txt; then
               echo "  entferne veraltet: $name"
-              gh release delete-asset "$tag" "$name" --yes || true
+              gh release delete-asset "$tag" "$name" --repo "$repo" --yes
             fi
           done < alt.txt
         working-directory: ${{ github.workspace }}
