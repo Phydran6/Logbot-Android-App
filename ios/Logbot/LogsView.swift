@@ -53,7 +53,11 @@ struct LogsView: View {
             .safeAreaInset(edge: .top) { filterBar }
             .refreshable { await reload() }
             .task {
-                options = (try? await api?.filterOptions()) ?? .empty
+                // Kein `(try? await api?.…) ?? .empty`: Optional-Verkettung und
+                // `try?` ergeben zusammen ein doppelt verpacktes Optional.
+                if let api, let fetched = try? await api.filterOptions() {
+                    options = fetched
+                }
                 await reload()
             }
             .sheet(item: $selected) { entry in

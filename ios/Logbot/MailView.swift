@@ -95,12 +95,11 @@ struct MailView: View {
             notice = nil
         } catch let failure as ApiError {
             status = nil
-            notice = {
-                if case .notImplemented = failure {
-                    return "Dieser Serverstand liefert noch keinen Postfix-Zustand. Die Logzeilen unten funktionieren trotzdem."
-                }
-                return failure.errorDescription
-            }()
+            if case .notImplemented = failure {
+                notice = "Dieser Serverstand liefert noch keinen Postfix-Zustand. Die Logzeilen unten funktionieren trotzdem."
+            } else {
+                notice = failure.errorDescription
+            }
         } catch {
             status = nil
             notice = error.localizedDescription

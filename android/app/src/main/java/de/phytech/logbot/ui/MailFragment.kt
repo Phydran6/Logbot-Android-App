@@ -12,10 +12,10 @@
  *   1. Die Logzeilen kommen aus GET /api/logs?category=mail. Diese Kategorie
  *      buendelt serverseitig postfix, dovecot, sendmail, exim und opendkim -
  *      das laeuft mit jedem Serverstand.
- *   2. Dienstzustand, Warteschlange und Reset-Mail liegen hinter /api/mail/*.
- *      Diese Endpunkte sind neu; aeltere Server antworten mit 404. Dann zeigt
- *      der Bereich einen Hinweis statt einer Fehlermeldung und der Rest der
- *      Ansicht bleibt benutzbar.
+ *   2. Dienstzustand, Warteschlange und Reset-Mail liegen hinter den
+ *      Endpunkten unter /api/mail. Sie sind neu; aeltere Server antworten
+ *      mit 404. Dann zeigt der Bereich einen Hinweis statt einer
+ *      Fehlermeldung, und der Rest der Ansicht bleibt benutzbar.
  *
  * Der Kontrakt der /api/mail-Endpunkte steht in docs/SERVER-API.md.
  */

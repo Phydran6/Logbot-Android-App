@@ -10,6 +10,7 @@
 //
 
 import SwiftUI
+import UIKit
 import WebKit
 
 struct WebPane: View {
