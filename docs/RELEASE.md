@@ -63,7 +63,21 @@ aus Tag und Lauf-Nummer. Die Werte in `android/app/build.gradle.kts` und
 | 5 | `deploy.yml` | AAB → Play-Track `internal`, IPA → TestFlight |
 
 Fehlen Store-Secrets, überspringen sich die betroffenen Schritte mit einer
-Warnung. Die Kette bleibt grün, es entstehen unsignierte Artefakte.
+Warnung. Die Kette bleibt grün, es entstehen unsignierte Artefakte — das APK
+heißt dann `Logbot-<version>-android-unsigniert.apk`, damit am Dateinamen
+steht, was man vor sich hat.
+
+### Ohne Tag: der Knopf in der Oberfläche
+
+`release.yml` hat zusätzlich einen `workflow_dispatch`-Eingang. Wer keinen Tag
+pushen kann oder will, geht über
+
+> `Actions → Release → Run workflow → Version: 1.0.0`
+
+Das baut dieselben Artefakte und legt Tag **und** Release am Ende selbst an —
+`softprops/action-gh-release` erzeugt `v1.0.0` auf dem gewählten Stand. Der
+Eingang steht erst zur Verfügung, wenn `release.yml` auf dem Standardzweig
+liegt; das verlangt GitHub so für jeden `workflow_dispatch`.
 
 Android muss durchlaufen, damit das Release erscheint. iOS darf fehlen — ohne
 Apple-Zugang wird dort nur unsigniert gebaut, und das soll das Release nicht
