@@ -1,0 +1,99 @@
+name: CI
+
+# Bei jedem Push und jedem Pull Request: bauen und testen.
+#
+# Der Debug-APK haengt 30 Tage als Artefakt am Lauf - damit laesst sich jeder
+# Stand ausprobieren, ohne ein Release zu erzeugen.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android bauen und testen
+    runs-on: ubuntu-latest
+    # Ohne Grenze haengt ein blockierter Lauf bis zum Standard-Limit von
+    # sechs Stunden und blockiert dabei die Nebenlaeufigkeitsgruppe.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 21 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Android SDK einrichten
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+
+      - name: Gradle-Zwischenstaende puffern
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'android/gradle/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: gradlew ausfuehrbar machen
+        run: chmod +x android/gradlew
+
+      # Ein Gradle-Aufruf statt drei: Die Konfigurationsphase laeuft damit
+      # einmal statt dreimal, und das ist bei kaltem Puffer der teuerste Teil.
+      # Lint bricht dabei nicht ab (siehe lint-Block in app/build.gradle.kts) -
+      # ein Hinweis auf eine veraltete API soll den Lauf melden, nicht stoppen.
+      - name: Tests, Lint und Debug-APK
+        working-directory: android
+        run: ./gradlew testDebugUnitTest lintDebug assembleDebug --no-daemon --stacktrace
+
+      - name: APK mit Commit-Kuerzel benennen
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+             "out/logbot-debug-${GITHUB_SHA::7}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: logbot-debug-apk
+          path: out/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+  ios:
+    name: iOS bauen (unsigniert)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode-Projekt erzeugen
+        run: bash scripts/ensure_ios_project.sh
+
+      # Ohne Signatur: Die CI soll pruefen, ob der Swift-Code uebersetzt -
+      # dafuer braucht es keinen Apple-Zugang. Signiert wird erst im Release.
+      - name: Uebersetzen
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Logbot.xcodeproj \
+            -scheme Logbot \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_STYLE=Automatic \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            -quiet

@@ -1,0 +1,187 @@
+default_platform(:ios)
+
+APP_IDENTIFIER = "de.phytech.logbot".freeze
+TEAM_ID = "352N56D836".freeze
+PROFILE_NAME = "match AppStore #{APP_IDENTIFIER}".freeze
+PROJECT = File.expand_path("../Logbot.xcodeproj", __dir__).freeze
+IPA_DIR = File.expand_path("../build", __dir__).freeze
+IPA_NAME = "Logbot.ipa".freeze
+
+def app_store_api_key
+  app_store_connect_api_key(
+    key_id: ENV["APPSTORE_API_KEY_ID"],
+    issuer_id: ENV["APPSTORE_API_ISSUER_ID"],
+    key_content: ENV["APPSTORE_API_PRIVATE_KEY"],
+    is_key_content_base64: true,
+    in_house: false,
+  )
+end
+
+# Apple erlaubt in CFBundleShortVersionString nur Ziffern und hoechstens drei
+# durch Punkte getrennte Teile. Ein `2026.05.29.22.30.00` - das alte,
+# datumsbasierte Schema von Logbot - lehnt App Store Connect mit ITMS-90060
+# ab, und zwar erst beim Upload, nach der vollen Bauzeit. Deshalb hier.
+def checked_version(options)
+  version = options[:version].to_s
+  UI.user_error!("Parameter version: fehlt.") if version.empty?
+
+  unless version.match?(/\A\d+(\.\d+){0,2}\z/)
+    UI.user_error!(
+      "Version \"#{version}\" ist fuer Apple ungueltig. Erlaubt sind nur " \
+      "Ziffern und hoechstens drei durch Punkte getrennte Teile, z.B. 1.0.0. " \
+      "Vorabzusaetze wie -beta.2 muss die CI abschneiden.",
+    )
+  end
+
+  version
+end
+
+def checked_build_number(options)
+  number = options[:build_number].to_s
+  UI.user_error!("Parameter build_number: fehlt.") if number.empty?
+  number
+end
+
+# Das Xcode-Projekt entsteht aus project.yml und liegt nicht im Repository.
+# Ohne diesen Schritt findet gym nichts zum Bauen.
+def ensure_project
+  sh("bash #{File.expand_path('../../scripts/ensure_ios_project.sh', __dir__)}")
+end
+
+# Auf manuelle Signatur mit dem match-Profil stellen.
+#
+# Xcodes Automatik sucht ein ENTWICKLER-Zertifikat, wir haben ein
+# Verteilungs-Zertifikat fuer den App Store. Sonst bricht der Build ab mit
+# "No development certificates available" - das klingt nach einem fehlenden
+# Zertifikat und ist die falsche Signatur-Art.
+def use_manual_signing
+  update_code_signing_settings(
+    path: PROJECT,
+    use_automatic_signing: false,
+    team_id: TEAM_ID,
+    bundle_identifier: APP_IDENTIFIER,
+    code_sign_identity: "Apple Distribution",
+    profile_name: PROFILE_NAME,
+    targets: ["Logbot"],
+  )
+end
+
+def build_ipa(version, build_number)
+  build_app(
+    project: PROJECT,
+    scheme: "Logbot",
+    configuration: "Release",
+    export_method: "app-store",
+    export_options: File.expand_path("../ExportOptions.plist", __dir__),
+    output_directory: IPA_DIR,
+    output_name: IPA_NAME,
+    clean: true,
+    # Version am Build vorbeigeben statt in die Info.plist zu schreiben: Die
+    # Datei liegt im Repository und soll nach einem CI-Lauf unveraendert sein.
+    xcargs: "MARKETING_VERSION=#{version} CURRENT_PROJECT_VERSION=#{build_number}",
+  )
+end
+
+platform :ios do
+  before_all do
+    # Pflicht auf einem CI-Rechner: `match` legt das Zertifikat in einen
+    # Schluesselbund, und der Anmelde-Schluesselbund eines Runners ist
+    # gesperrt. `setup_ci` erzeugt einen temporaeren, entsperrten.
+    setup_ci if ENV["CI"]
+  end
+
+  desc "Signatur einmalig einrichten (erzeugt Zertifikat und Profil)"
+  lane :setup_signing do
+    match(
+      type: "appstore",
+      app_identifier: APP_IDENTIFIER,
+      readonly: false,
+      api_key: app_store_api_key,
+      git_url: ENV["MATCH_GIT_URL"],
+    )
+  end
+
+  desc "Signiertes Release-IPA bauen"
+  lane :build_release do |options|
+    version = checked_version(options)
+    build_number = checked_build_number(options)
+
+    ensure_project
+    match(
+      type: "appstore",
+      app_identifier: APP_IDENTIFIER,
+      readonly: true,
+      api_key: app_store_api_key,
+      git_url: ENV["MATCH_GIT_URL"],
+    )
+    use_manual_signing
+    build_ipa(version, build_number)
+  end
+
+  desc "Build bauen und an TestFlight schicken"
+  lane :beta do |options|
+    version = checked_version(options)
+    build_number = checked_build_number(options)
+    api_key = app_store_api_key
+
+    ensure_project
+    match(
+      type: "appstore",
+      app_identifier: APP_IDENTIFIER,
+      readonly: true,
+      api_key: api_key,
+      git_url: ENV["MATCH_GIT_URL"],
+    )
+    use_manual_signing
+    build_ipa(version, build_number)
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: File.join(IPA_DIR, IPA_NAME),
+      skip_waiting_for_build_processing: true,
+      changelog: "Siehe docs/CHANGELOG.md im Repository.",
+    )
+  end
+
+  desc "Nur die Store-Texte und Bilder aktualisieren (ohne Build)"
+  lane :metadata_only do
+    deliver(
+      api_key: app_store_api_key,
+      app_identifier: APP_IDENTIFIER,
+      skip_binary_upload: true,
+      skip_app_version_update: true,
+      submit_for_review: false,
+    )
+  end
+
+  desc "Build hochladen und zur Prüfung einreichen"
+  lane :release_store do |options|
+    version = checked_version(options)
+    build_number = checked_build_number(options)
+    api_key = app_store_api_key
+
+    ensure_project
+    match(
+      type: "appstore",
+      app_identifier: APP_IDENTIFIER,
+      readonly: true,
+      api_key: api_key,
+      git_url: ENV["MATCH_GIT_URL"],
+    )
+    use_manual_signing
+    build_ipa(version, build_number)
+
+    deliver(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      ipa: File.join(IPA_DIR, IPA_NAME),
+      app_version: version,
+      submit_for_review: true,
+      submission_information: {
+        export_compliance_uses_encryption: false,
+        content_rights_contains_third_party_content: false,
+        add_id_info_uses_idfa: false,
+      },
+    )
+  end
+end

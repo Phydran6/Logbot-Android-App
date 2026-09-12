@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Rahmen der App: Titelleiste oben, Bereich in der Mitte, Leiste unten.
+
+    Bewusst nur eine LinearLayout-Saeule: Es gibt keine Scroll-Verzahnung
+    zwischen Titelleiste und Inhalt, also braucht es weder CoordinatorLayout
+    noch AppBarLayout. Weniger Ebenen, weniger Ueberraschungen.
+
+    Die Leiste unten ersetzt das ausgeklappte Menue der Weboberflaeche. Vier
+    Ziele sind die Obergrenze - ab fuenf wird auf schmalen Geraeten die
+    Beschriftung abgeschnitten.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:titleTextAppearance="?attr/textAppearanceTitleMedium" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/contentFrame"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav" />
+</LinearLayout>
