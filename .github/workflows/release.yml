@@ -76,6 +76,7 @@ jobs:
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - name: Keystore und signing.properties schreiben
+        id: signing
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -83,9 +84,11 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::warning::Kein Android-Keystore hinterlegt - es wird mit dem Debug-Key gebaut. Play nimmt so ein Paket nicht an."
+            echo "::warning::Kein Android-Keystore hinterlegt. Das APK wird mit der Debug-Signatur gebaut: installierbar, aber nicht fuer Play geeignet und ohne Update-Pfad zwischen Releases."
+            echo "echt=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          echo "echt=true" >> "$GITHUB_OUTPUT"
           echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
           # storeFile wird relativ zum Modul :app aufgeloest.
           cat > android/signing.properties <<EOF
@@ -116,19 +119,18 @@ jobs:
           # Am Dateinamen soll stehen, was man geladen hat: Programm, Version
           # und wofuer die Datei gedacht ist.
           #
-          # Ohne Keystore heisst das APK app-release-unsigned.apk statt
-          # app-release.apk. Das ist kein Fehler, sondern der angekuendigte
-          # Rueckfall - der Name sagt es dann auch im Release.
+          # Der Name sagt, womit signiert wurde. Ohne hinterlegten Keystore
+          # traegt das Paket die Debug-Signatur: installierbar, aber kein
+          # Update-Pfad zu einem spaeter echt signierten Release.
           v="${{ needs.prepare.outputs.version }}"
           out=android/app/build/outputs
           mkdir -p release
 
-          if [ -f "$out/apk/release/app-release.apk" ]; then
+          if [ "${{ steps.signing.outputs.echt }}" = "true" ]; then
             cp "$out/apk/release/app-release.apk" "release/Logbot-${v}-android.apk"
           else
-            echo "::warning::Kein signiertes APK - es wird die unsignierte Fassung veroeffentlicht."
-            cp "$out/apk/release/app-release-unsigned.apk" \
-               "release/Logbot-${v}-android-unsigniert.apk"
+            cp "$out/apk/release/app-release.apk" \
+               "release/Logbot-${v}-android-testsignatur.apk"
           fi
 
           cp "$out/bundle/release/app-release.aab" \
