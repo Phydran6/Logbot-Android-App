@@ -2,6 +2,11 @@
 
 Vier Abläufe. Einer läuft ständig, einer bei jedem Tag, zwei auf Zuruf.
 
+> Diese Datei heißt bewusst nicht `README.md`. GitHub zeigt auf der
+> Startseite eines Repositorys `.github/README.md` **bevorzugt vor** der
+> `README.md` im Wurzelverzeichnis — eine Übersicht der Abläufe würde dort
+> also die Projektvorstellung verdrängen.
+
 [← Zurück zur Übersicht](../README.md) ·
 [Release-Prozess](../docs/RELEASE.md) ·
 [Veröffentlichen](../docs/STORE.md)

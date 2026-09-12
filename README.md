@@ -116,7 +116,7 @@ Ein Verzeichnis je Sache, jedes mit eigener README.
 | `ios/` | Die iOS-App: SwiftUI, XcodeGen, fastlane | [README](ios/README.md) |
 | `docs/` | Architektur, Server-Schnittstelle, Release, Stores, Sicherheit | [README](docs/README.md) |
 | `scripts/` | Helfer für Release und Signatur | [README](scripts/README.md) |
-| `.github/` | Die Abläufe: CI, Release, Deploy, Signatur | [README](.github/README.md) |
+| `.github/` | Die Abläufe: CI, Release, Deploy, Signatur | [Übersicht](.github/ABLAEUFE.md) |
 
 ## Mitmachen
 

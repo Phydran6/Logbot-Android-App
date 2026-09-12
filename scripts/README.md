@@ -5,7 +5,7 @@ sagen im Fehlerfall, **woran** es liegt.
 
 [← Zurück zur Übersicht](../README.md) ·
 [Release-Prozess](../docs/RELEASE.md) ·
-[Abläufe](../.github/README.md)
+[Abläufe](../.github/ABLAEUFE.md)
 
 ---
 

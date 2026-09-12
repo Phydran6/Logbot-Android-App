@@ -8,7 +8,7 @@ git tag v1.0.0 && git push origin v1.0.0
 
 [← Doku-Übersicht](README.md) ·
 [Veröffentlichen](STORE.md) ·
-[Abläufe](../.github/README.md)
+[Abläufe](../.github/ABLAEUFE.md)
 
 ---
 
