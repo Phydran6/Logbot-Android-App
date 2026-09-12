@@ -45,4 +45,4 @@ Der Server liegt in einem eigenen Repository:
 [`android/`](../android/README.md) ·
 [`ios/`](../ios/README.md) ·
 [`scripts/`](../scripts/README.md) ·
-[`.github/`](../.github/README.md)
+[`.github/`](../.github/ABLAEUFE.md)

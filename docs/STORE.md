@@ -8,7 +8,7 @@ macOS-Runner von GitHub Actions.
 
 [← Doku-Übersicht](README.md) ·
 [Release-Prozess](RELEASE.md) ·
-[Abläufe](../.github/README.md)
+[Abläufe](../.github/ABLAEUFE.md)
 
 ---
 
