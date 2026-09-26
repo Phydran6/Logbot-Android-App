@@ -1,4 +1,4 @@
-﻿[versions]
+[versions]
 agp = "9.1.0"
 # Hinweis: Versionen ggf. von Android Studio ("Update available") bestätigen lassen.
 # kotlin muss zur in AGP 9 eingebauten Kotlin-Version passen (AGP 9.0 -> KGP 2.2.10),
