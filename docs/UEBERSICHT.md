@@ -61,7 +61,7 @@ Automatisch, kein manuelles Bumpen:
 
 ## Branches / Docs
 - Rewrite auf Branch **`native-rewrite`**; **`main`** = letzter funktionierender WebView-Stand.
-- Details: [ARCHITECTURE.md](ARCHITECTURE.md) · [ROADMAP.md](ROADMAP.md) · [CHANGELOG](../CHANGELOG.md).
+- Details: [ARCHITEKTUR.md](ARCHITEKTUR.md) · [ROADMAP.md](ROADMAP.md) · [CHANGELOG](CHANGELOG.md).
 
 ## Offen (optionale Kür)
 Offline-Caching, Pull-to-refresh, Certificate-Pinning, Agent-Retention-UI,

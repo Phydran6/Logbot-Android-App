@@ -1,140 +1,209 @@
-# Architektur
+# Logbot Android – Architektur (native Neuausrichtung)
 
-Wie die App aufgebaut ist, und warum so.
+> Status: **Phase 1 (Konzept)**. Dieses Dokument ist der Bauplan für den Umbau vom
+> WebView-Wrapper zur eigenständigen nativen App. Es wird pro Phase fortgeschrieben.
 
-[← Doku-Übersicht](README.md) ·
-[Server-Schnittstelle](SERVER-API.md) ·
-[Sicherheit](SICHERHEIT.md)
+## 1. Ziel & Prinzipien
 
----
+Die App ist ein **nativer Client für einen selbst gehosteten
+[Logbot-Server](https://github.com/Phydran6/Logbot-Server)** (FastAPI + PostgreSQL).
+Sie ersetzt die bisherige WebView durch eine native Oberfläche, die die Server-Daten
+direkt über die REST-API holt und die **Menüführung und Ansichten des Servers 1:1
+nachbaut**.
 
-## Der Grundgedanke
+Leitplanken:
 
-Logbot war ursprünglich eine Vollbild-`WebView` und sonst nichts. Das war
-richtig für den Anfang — die Weboberfläche des Servers kann alles, und alles
-doppelt zu bauen wäre Unfug.
+- **Schnell**: native Listen, Paging, kein WebView-Overhead, flüssige Material-3-UI.
+- **Benutzerfreundlich**: vertraute Navigation (gleiche Menüpunkte wie der Server),
+  klare Lade-/Leer-/Fehlerzustände, Pull-to-refresh, Dark/Light.
+- **Sicher**: verschlüsselter Token-Speicher, Biometrie-Lock, HTTPS-only.
+- **Pragmatisch sauber**: MVVM + Repository, keine Über-Abstraktion. Ein Modul,
+  klare Schichten, Feature-Pakete.
+- **Funktionsparität**: alle bisherigen App-Funktionen bleiben erhalten; alle
+  Server-Screens werden abgedeckt.
 
-Es hatte nur einen Haken: **Die drei Dinge, die man am Telefon wirklich
-braucht, waren die drei umständlichsten.** Serverzustand ansehen hieß:
-Weboberfläche laden, Menü ausklappen, Dashboard antippen, warten. Logs lesen
-hieß: eine Tabelle mit acht Spalten auf einem Bildschirm, der für drei Platz
-hat.
+## 2. Tech-Stack
 
-Also gilt jetzt eine einfache Regel:
+| Bereich          | Wahl                                                        |
+|------------------|-------------------------------------------------------------|
+| Sprache          | Kotlin                                                      |
+| UI               | Jetpack Compose + Material 3                                |
+| Architektur      | MVVM + Repository, unidirektionaler Datenfluss (UDF)        |
+| Navigation       | Navigation-Compose, **Single-Activity**                    |
+| DI               | Hilt                                                        |
+| Networking       | Retrofit + OkHttp + kotlinx.serialization                  |
+| Async            | Coroutines + Flow / StateFlow                              |
+| Paging (Logs)    | Paging 3 (`paging-compose`)                                |
+| Bilder           | Coil (Branding-Logo, Base64-QR-Render)                     |
+| QR-Scan          | ZXing (`zxing-android-embedded`, bereits vorhanden)        |
+| Charts (Dashboard)| Vico *(Vorschlag, finale Wahl in Phase 3)*                |
+| Token-Speicher   | EncryptedSharedPreferences (hinter `CredentialStore`)      |
+| Sonst. Prefs     | DataStore (Preferences)                                     |
+| Biometrie        | `androidx.biometric` (bereits vorhanden)                   |
 
-> **Was man am Telefon oft braucht, ist nativ. Alles andere bleibt Web.**
+> Build wird in Phase 2 modernisiert: Kotlin-Android-, Compose-Compiler-,
+> Serialization-, KSP- und Hilt-Plugins ergänzen (aktuell fehlt sogar das
+> Kotlin-Plugin im Version-Catalog).
 
-Nativ sind Status, Logs und Mail. Die Weboberfläche ist der vierte Bereich und
-deckt weiterhin Benutzer, Webhooks, Branding, Updates und alles Seltene ab.
+## 3. Modul- & Paketstruktur
 
----
-
-## Die Schichten
+Ein Gradle-Modul (`:app`), Paket-nach-Feature mit gemeinsamen `core`-/`data`-Schichten:
 
 ```
-ui/          StatusFragment   LogsFragment   MailFragment   WebFragment
-             (Anzeige, kein Wissen über HTTP)
-                    │
-data/        LogbotApi        Models         Credentials
-             (HTTP + JSON)    (Typen)        (Schlüsselverwahrung)
-                    │
-             Logbot-Server, REST über HTTPS
+de.phytech.logbot
+├── LogbotApp.kt            // @HiltAndroidApp
+├── MainActivity.kt         // Single-Activity, Compose-Host, NavHost
+├── core/
+│   ├── network/            // Retrofit-Setup, OkHttp, Interceptors, ApiResult, Fehler-Mapping
+│   ├── auth/               // SessionManager, CredentialStore, AuthInterceptor/Authenticator
+│   ├── security/           // BiometricGate, Keystore-Krypto
+│   ├── designsystem/       // Theme, Farben, Typo, wiederverwendbare Compose-Komponenten
+│   └── navigation/         // Routen, NavHost, Drawer, Rollen-Gating
+├── data/
+│   ├── api/                // Retrofit-Service-Interfaces + DTOs (an OpenAPI orientiert)
+│   ├── repository/         // LogsRepository, AgentsRepository, UsersRepository, ...
+│   └── model/              // Domänenmodelle (UI-unabhängig)
+└── feature/
+    ├── setup/              // Instanz-URL + QR-App-Login
+    ├── login/              // Passwort-Login + MFA
+    ├── dashboard/
+    ├── logs/               // Liste (Paging) + Filter + Detail
+    ├── agents/
+    ├── users/
+    ├── webhooks/
+    ├── health/
+    ├── settings/
+    └── branding/
 ```
 
-Kein ViewModel, kein Repository-Muster, keine Dependency Injection. Die App
-hat vier Ansichten und fünf Endpunkte; jede weitere Schicht wäre Zeremonie
-ohne Nutzen. Was an Zustand da ist, lebt im jeweiligen Fragment und ist beim
-Wechsel weg — außer dem, was der Rahmen bewusst festhält (siehe unten).
+## 4. Schichten & Datenfluss
 
-Die iOS-Fassung folgt derselben Aufteilung mit SwiftUI und `async/await`.
+```
+Compose-Screen ──Intent/Event──▶ ViewModel ──▶ Repository ──▶ ApiService (Retrofit)
+      ▲                              │                              │
+      └────────  UiState  ◀──────────┘   ◀────────  DTO→Model  ◀────┘
+```
 
----
+- **UI**: zustandslose Composables; `ViewModel` hält `StateFlow<UiState>`.
+  `UiState` als sealed/data class (Loading / Content / Empty / Error).
+- **Repository**: einzige Datenquelle pro Domäne; mappt DTO→Domänenmodell,
+  kapselt Paging und (später) Caching. ViewModels kennen kein Retrofit.
+- **Domain**: schlank gehalten — eigene Use-Cases nur wo sinnvoll, sonst direkt
+  Repository. Keine Use-Case-Schicht „auf Vorrat".
+- **Fehler**: einheitlicher `ApiResult<T>` (Success / HttpError / NetworkError);
+  401 wird zentral abgefangen (siehe §6).
 
-## Der Rahmen
+## 5. Navigation – die Server-Sidebar nativ
 
-`MainActivity` legt jeden Bereich **einmal** an und blendet danach nur noch
-ein und aus (`FragmentTransaction.hide/show`), statt ihn auszutauschen.
+Der Server nutzt eine Sidebar. Auf dem Handy bildet ein **ModalNavigationDrawer**
+(Hamburger) diese am treuesten ab — gleiche Reihenfolge, gleiche Beschriftungen.
 
-Das hat drei Folgen, alle erwünscht:
+**Auth-Graph** (kein Drawer): `Setup → Login → MFA`
+**Haupt-Graph** (mit Drawer):
 
-1. **Zustand bleibt.** Filter, Scrollposition und der Verlauf der Weboberfläche
-   überleben einen Wechsel zwischen den Bereichen.
-2. **Keine Übergangsanimation.** Es gibt nichts zu animieren, wenn nichts
-   ausgetauscht wird. Ein Tipp auf die Leiste wechselt sofort.
-3. **Die `WebView` lädt nicht neu.** Wer in der Weboberfläche drei Ebenen tief
-   ist, steht nach einem Abstecher in die Logs wieder dort.
+| Drawer-Eintrag | Route        | Sichtbar für        |
+|----------------|--------------|---------------------|
+| Dashboard      | `dashboard`  | alle                |
+| Logs           | `logs`       | alle                |
+| Agents         | `agents`     | alle                |
+| Users          | `users`      | **admin**           |
+| Webhooks       | `webhooks`   | alle (ggf. admin)   |
+| Health         | `health`     | alle                |
+| Einstellungen  | `settings`   | alle                |
+| └ Branding     | `branding`   | **admin**           |
 
-Der Preis: Alle vier Bereiche liegen gleichzeitig im Speicher. Bei vier
-schlanken Ansichten ist das der günstigere Handel.
+- **Rollen-Gating**: `UserResponse.role == "admin"` blendet Admin-Einträge ein/aus
+  (analog `isAdmin` im Server-Frontend). Server bleibt die Autorität — die UI
+  versteckt nur, was der Nutzer nicht darf.
+- Öffentliche Inhalte (Impressum/Datenschutz) als statische Screens aus dem Drawer-Footer.
 
----
+## 6. Networking, Auth & Session
 
-## Nebenläufigkeit
+**Dynamische Base-URL**: Die Instanz-URL ist erst nach dem Setup bekannt. Der
+OkHttp-Client wird mit einem Interceptor gebaut, der Host/Schema aus dem
+`CredentialStore` liest und in jede Anfrage einsetzt (Retrofit-Base-URL ist ein
+Platzhalter). Wechselt die Instanz → keine Neuinitialisierung des Graphen nötig.
 
-Ein Thread-Pool mit drei Threads, Rückmeldung auf dem Hauptthread. Mehr
-gleichzeitige Anfragen stellt die App nie — Status, Logs und Mail können
-parallel laufen, das war es.
+**Auth-Interceptor**: hängt `Authorization: Bearer <jwt>` an, sofern vorhanden.
 
-Jede Rückmeldung prüft, ob die Ansicht noch da ist (`isAdded`), bevor sie
-etwas schreibt. Die Logliste prüft zusätzlich, ob die Antwort noch zur
-aktuellen Anfrage gehört: Wer schnell filtert, soll nicht das Ergebnis von
-vorhin sehen.
+**401-Handling (zentral)**: Ein OkHttp-`Authenticator`/Interceptor erkennt 401,
+löscht das Token über den `SessionManager` und löst Navigation zurück zum Login aus
+(wie das Server-Frontend, das bei 401 ausloggt). Kein vollständiger Setup-Reset mehr
+nötig — die Instanz-URL bleibt erhalten, nur das JWT wird verworfen.
 
----
+### Login-Flows (gegen die echten Server-Endpoints)
 
-## Anzeige der Logs
+1. **QR-App-Login** (Setup → „QR scannen"):
+   - QR enthält `{"url": <api_url>, "token": <64-Hex>, "type": "logbot_app_auth_v1"}`.
+   - App ruft `POST {url}/api/auth/app-token/exchange` mit `{ "token": <64-Hex> }`.
+   - Antwort: `{ access_token }` → als JWT speichern, `url` als Instanz-URL speichern.
+   - ⚠️ **Korrektur ggü. Alt-App**: Der QR-Token ist ein **einmaliger 15-Min-Token**,
+     kein Dauer-Bearer. Er **muss getauscht** werden — die alte App nutzte ihn
+     fälschlich direkt als Authorization-Header.
 
-Das ist der Teil, an dem die alte Ansicht scheiterte.
+2. **Passwort-Login** (Setup → URL eingeben → Login-Screen):
+   - `POST /api/auth/login` (form-data `username`, `password`).
+   - Antwort entweder `{ access_token }` **oder** `{ mfa_required: true, mfa_token,
+     expires_in_seconds }`.
+   - Bei MFA: `POST /api/auth/login/mfa` mit `{ mfa_token, code }` (6-stelliger TOTP
+     **oder** 10-stelliger Backup-Code) → `{ access_token }`.
+   - Nach Login: `GET /api/auth/me` → `UserResponse` (Rolle für Gating cachen).
 
-| Alte Tabelle | Jetzt |
-|:--|:--|
-| Acht gleich gewichtete Spalten | Die Nachricht groß, alles andere klein darunter |
-| Schweregrad als Textspalte | Farbstreifen am linken Rand |
-| Datum in jeder Zeile | Trennzeile beim Tageswechsel |
-| Seitenzahlen unten | Nachladen, sobald die letzten fünf Zeilen sichtbar werden |
-| Filter in einem Dialog | Chip-Reihen direkt über der Liste |
+**Token-Lebensdauer**: JWT läuft serverseitig ab → 401 → erneuter Login. (Kein
+Refresh-Token-Endpoint vorhanden.)
 
-**Gefiltert wird auf dem Server.** Bei Millionen Zeilen ist alles andere
-aussichtslos; `LogQuery` bildet genau die Parameter ab, die `/api/logs`
-versteht. Die Filterwerte selbst kommen ebenfalls vom Server
-(`/api/logs/filter-options`) — ein neuer Logtyp erscheint in der App ohne
-App-Update.
+**Speicher**: `instance_url` + `access_token` verschlüsselt (EncryptedSharedPreferences,
+hinter `CredentialStore`-Interface — austauschbar). Biometrie-Flag wie gehabt.
 
----
+**Biometrie-Lock**: beim Kaltstart vor Entschlüsselung des Tokens (unverändert zur
+Alt-App, nur nach Compose portiert).
 
-## Der Mail-Bereich
+## 7. Screen ↔ API-Mapping
 
-Zwei Quellen, bewusst getrennt:
+| Screen     | Zweck                              | Kern-Endpoints |
+|------------|------------------------------------|----------------|
+| Dashboard  | Statistik-Kacheln, Charts          | `GET /api/logs/stats`, `GET /api/health/detailed` |
+| Logs       | Paginierte Liste, Filter, Detail   | `GET /api/logs` (page/page_size/filter), `GET /api/logs/{id}` |
+| Agents     | Geräte, Online-Status, Retention   | `GET/PUT/DELETE /api/agents`, decommission |
+| Users      | Benutzer + Rollen, MFA-Reset       | `GET/POST/PUT/DELETE /api/users`, `/users/{id}/mfa/reset` |
+| Webhooks   | CRUD, Filter, Aufruf-Statistik     | `GET/POST/PUT/DELETE /api/webhooks` |
+| Health     | CPU/RAM/Disk/Uptime, DB-Status     | `GET /api/health/detailed` |
+| Settings   | Allgemein, Retention, DB-Infos     | `GET/PUT /api/settings`, `/settings/database` |
+| Branding   | Whitelabel, Dark/Light, Logo       | `GET/PUT /api/branding` |
+| Login/MFA  | Anmeldung inkl. QR-App-Login       | `GET /api/auth/*` (siehe §6) |
 
-1. **Die Logzeilen** kommen aus `/api/logs?category=mail`. Diese Kategorie
-   bündelt serverseitig `postfix`, `dovecot`, `sendmail`, `exim` und
-   `opendkim`. Das läuft mit **jedem** Serverstand.
-2. **Dienstzustand, Warteschlange und Passwort-Reset** liegen hinter
-   `/api/mail/*`. Diese Endpunkte sind neu; ältere Server antworten mit 404.
+> Die genauen Query-Parameter/Felder werden je Screen in der jeweiligen Phase aus
+> der OpenAPI-Spec (`/api/openapi.json`) bzw. den Server-Routen verifiziert.
 
-Bei 404 zeigt der Bereich einen Hinweis statt einer Fehlermeldung, und die
-Logzeilen funktionieren weiter. Die App ist dadurch mit jedem Serverstand
-benutzbar und wird besser, sobald der Server nachzieht. Der Kontrakt steht in
-[SERVER-API.md](SERVER-API.md#optional-apimail).
+## 8. Sicherheit
 
----
+- **HTTPS-only**: Instanz-URL muss `https://` sein (cleartext via Network-Security-Config verbieten).
+- **Token** verschlüsselt at-rest (Keystore-gebundener Master-Key).
+- **Biometrie-Lock** vor Token-Zugriff.
+- **Kein Logging** von Tokens/Passwörtern (OkHttp-Logger nur im Debug, Header redacted).
+- **Certificate Pinning**: weiterhin **nicht** implementiert (bewusste Entscheidung,
+  siehe README) — bei direkten API-Calls noch relevanter, daher als Roadmap-Option vermerkt.
 
-## Breite statt Bruchstellen
+## 9. Was bleibt / was ersetzt wird
 
-Kein eigenes Tablet-Layout. Ab 600 dp und ab 840 dp Breite wächst nur der
-Seitenrand (`res/values-w600dp/dimens.xml`, `res/values-w840dp/dimens.xml`).
+**Bleibt (nach Compose portiert):** Setup (URL/Token/QR), verschlüsselter Speicher,
+Biometrie-Lock, QR-Scan, HTTPS-Erzwingung, 401-Erkennung.
 
-Eine Textzeile über die volle Breite eines Tablets liest sich schlecht; eine
-Spalte mit Luft daneben liest sich gut. Zwei Spalten wären ein zweites Layout
-mit eigenen Fehlern.
+**Entfällt:** WebView + `WebViewClient`/`WebChromeClient`-Hardening, JS-Bridge
+`LogbotApp` (Biometrie wird nativ in den App-Einstellungen umgeschaltet statt aus der
+Web-UI), `localStorage`-Token-Injektion, Versions-Overlay über der WebView.
 
----
+## 10. Roadmap
 
-## Farben
+Siehe [ROADMAP.md](ROADMAP.md). Kurz:
+Phase 0 Discovery ✅ → **Phase 1 Architektur/Beschreibung** → Phase 2 Gerüst
+(Build, Theme, Navigation, API-Client, Auth/MFA/QR) → Phase 3a Read-Screens →
+Phase 3b Management-Screens → Phase 4 Feinschliff.
 
-Die Oberfläche nimmt die Material-3-Palette des Systems und folgt hell/dunkel
-automatisch. Fest sind nur die **Schweregrad-Farben** — sie tragen eine
-Bedeutung und dürfen nicht mit dem Systemakzent wandern.
+## 11. Offene Entscheidungen (je Phase)
 
-Für dunkle Hintergründe liegen aufgehellte Gegenstücke in
-`res/values-night/colors.xml`. Dieselben Werte stehen in `ios/Logbot/Theme.swift`.
+- **Charts-Bibliothek** fürs Dashboard: Vico vs. eigenes Canvas (Phase 3).
+- **API-Client**: handgeschriebene Retrofit-Interfaces (klein, kontrolliert) vs.
+  Generierung aus OpenAPI. Aktueller Plan: handgeschrieben, OpenAPI als Referenz.
+- **Offline-Caching** (Room) für Logs/Agents: optional in Phase 4.
+- **Certificate Pinning**: optional, abhängig vom Einsatzumfeld.

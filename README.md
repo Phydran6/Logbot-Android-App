@@ -26,44 +26,44 @@ Logbot ist die mobile Oberfläche zum
 Sammelpunkt für die Logs deiner Rechner, Container und Netzwerkgeräte.
 
 Ein Logserver läuft, bis er es nicht mehr tut. Dann steht man irgendwo mit dem
-Telefon in der Hand und will drei Dinge wissen: Läuft er noch? Was ist als
-Letztes passiert? Und ging die Mail raus, auf die jemand wartet?
+Telefon in der Hand und will wissen: Läuft er noch? Was ist als Letztes
+passiert? Wer hängt noch dran?
 
-Genau diese drei Fragen beantwortet die App — jede einen Fingertipp entfernt,
-statt sich durch eine Weboberfläche zu hangeln, die für einen doppelt so
-breiten Bildschirm gebaut ist.
+Früher war die App dafür ein Rahmen um die Weboberfläche — praktisch gebaut,
+aber am Telefon unbrauchbar, weil diese Oberfläche für einen doppelt so
+breiten Bildschirm gedacht ist. Inzwischen ist sie **eine eigenständige native
+App**: Sie holt die Daten über die REST-API und bildet die Bereiche des Servers
+selbst ab.
 
 ## Was sie kann
 
-Vier Bereiche, eine Leiste unten.
+Die App bildet die Oberfläche des Servers nativ nach — dieselbe Seitenleiste,
+dieselben Bereiche, nur für den Daumen gebaut statt für die Maus.
 
-**Status** — Läuft der Server, und wie geht es ihm dabei? Prozessor,
-Arbeitsspeicher und Platte als Balken, dazu Datenbank, Agenten online und das
-Logaufkommen der letzten 24 Stunden. Aktualisiert sich von selbst, solange die
-Ansicht offen ist.
+**Dashboard und Health** — Log-Statistiken auf einen Blick, dazu Prozessor,
+Arbeitsspeicher, Platte, Laufzeit und Datenbank-Zustand.
 
-**Logs** — Die Einträge, lesbar auf einem Telefon. Die Nachricht steht groß,
-Zeit, Host und Quelle klein darunter, der Schweregrad ist ein Farbstreifen am
-Rand. Suchen, nach Stufe und Logtyp filtern, beim Scrollen lädt die nächste
-Seite nach.
+**Logs** — Liste mit Filtern nach Suchbegriff, Level, Host und Quelle,
+Detailansicht und Nachladen. Die Einträge sind auf einem Telefon lesbar, nicht
+eine Tabelle mit acht Spalten.
 
-**Mail** — Ob Postfix läuft, was in der Warteschlange hängt, und der Knopf,
-den man am Telefon sonst nie findet: Passwort zurücksetzen. Darunter die
-letzten Mail-Logzeilen, damit man sieht, ob die Mail wirklich rausging.
+**Agents, Users, Webhooks** — Geräte einsehen und löschen, Benutzer anlegen,
+ändern, löschen und MFA zurücksetzen, Webhooks samt Aufruf-URL und Token
+verwalten. Was nur Administratoren dürfen, blendet die App anhand der Rolle aus.
 
-**Weboberfläche** — Alles Übrige (Benutzer, Webhooks, Branding, Updates)
-bleibt die volle Weboberfläche des Servers, eingebettet und abgesichert.
-Nichts wird doppelt gebaut, was der Server schon kann.
+**Settings und Branding** — Server-Einstellungen bearbeiten, Datenbank-Infos
+einsehen, Whitelabel-Einstellungen pflegen.
+
+Überall Lade-, Fehler- und Leer-Zustände mit einem Knopf zum Wiederholen.
 
 ## Wie sie sich anfühlt
 
-| | |
+|  |  |
 |:--|:--|
-| **Vier Bereiche, eine Leiste** | Kein ausklappbares Menü, kein Suchen |
-| **Zustand bleibt** | Filter, Scrollposition und Web-Verlauf überleben den Wechsel |
-| **Wenig Bewegung** | Keine Übergangsanimation bei jedem Tipp |
-| **Breite nutzt Luft** | Auf Tablets wächst der Rand, nicht die Textzeile |
-| **Hell und dunkel** | Folgt dem Gerät; nur die Schweregrad-Farben bleiben fest |
+| **Nativ, nicht eingebettet** | Kein WebView mehr. Die Daten kommen über die REST-API |
+| **Seitenleiste wie am Server** | Wer die Weboberfläche kennt, findet sich sofort zurecht |
+| **Sicher verwahrt** | Token verschlüsselt auf dem Gerät, optionale Sperre per Fingerabdruck, Gesicht oder Code |
+| **Hell und dunkel** | Material 3, folgt dem Gerät |
 
 ## Einrichten
 
@@ -75,6 +75,10 @@ Vorausgesetzt wird eine laufende
 2. Dort **App verbinden** öffnen — der Server zeigt einen QR-Code
 3. In der App **QR-Code scannen** antippen (Android) oder den QR-Inhalt
    einfügen (iOS)
+
+Alternativ geht die Anmeldung direkt in der App: Instanz-URL eintragen, dann
+Benutzername und Passwort — mit MFA über TOTP oder Backup-Code, falls der
+Server das verlangt.
 
 Instanz-URL und Token liegen danach verschlüsselt auf dem Gerät: unter Android
 in `EncryptedSharedPreferences` mit Schlüssel im Android Keystore, unter iOS im

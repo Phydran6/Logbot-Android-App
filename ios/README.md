@@ -50,6 +50,14 @@ macOS-Runner von GitHub Actions. Zum Entwickeln schon.
 
 ---
 
+> **Achtung, die Fassungen laufen auseinander.** Die Android-App ist
+> inzwischen die native Compose-Neuentwicklung mit neun Server-Screens
+> (Dashboard, Health, Logs, Agents, Users, Webhooks, Settings, Branding).
+> Diese iOS-App bildet noch den früheren Stand mit vier Bereichen ab und
+> ruft unter anderem `/api/mail` auf, das es im Server nicht gibt. Sie
+> übersetzt und läuft, ist aber kein Spiegel der Android-Fassung mehr.
+> Nachziehen steht aus — siehe [docs/ROADMAP.md](../docs/ROADMAP.md).
+
 ## Unterschiede zur Android-Fassung
 
 | | Android | iOS |
