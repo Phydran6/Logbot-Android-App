@@ -4,259 +4,133 @@
  * Paket:        de.phytech.logbot
  *
  * Beschreibung:
- * Rahmen der App: App-Lock, Titelleiste, vier Bereiche in einer Leiste unten.
- *
- * Frueher war das hier eine Vollbild-WebView und sonst nichts. Wer den
- * Serverzustand sehen wollte, musste sich durch das Menue der Weboberflaeche
- * tippen - auf einem Telefon mehrere Schritte fuer eine Zahl. Jetzt liegen
- * Status, Logs und Mail je einen Tipp entfernt, die Weboberflaeche bleibt als
- * vierter Bereich fuer alles Uebrige.
- *
- * Bereiche werden angelegt und danach nur noch ein- und ausgeblendet, nicht
- * ausgetauscht. Das haelt Scrollposition, Filter und den Web-Verlauf beim
- * Wechseln - und spart die Uebergangsanimation, die sonst bei jedem Tipp
- * laufen wuerde.
+ * Single-Activity-Host (AppCompatActivity, damit BiometricPrompt nutzbar ist).
+ * Beim Start: optionaler Biometrie-/PIN-Lock, dann der Root-NavHost
+ * (Auth-Graph Setup → Login → MFA bzw. direkt der Haupt-Graph, falls angemeldet).
  */
 package de.phytech.logbot
 
-import android.content.Intent
 import android.os.Bundle
-import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
-import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import de.phytech.logbot.data.Credentials
-import de.phytech.logbot.ui.LogsFragment
-import de.phytech.logbot.ui.MailFragment
-import de.phytech.logbot.ui.StatusFragment
-import de.phytech.logbot.ui.WebFragment
-import de.phytech.logbot.ui.WebHost
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import dagger.hilt.android.AndroidEntryPoint
+import de.phytech.logbot.core.auth.CredentialStore
+import de.phytech.logbot.core.designsystem.theme.LogbotTheme
+import de.phytech.logbot.core.navigation.Routes
+import de.phytech.logbot.core.security.Biometrics
+import de.phytech.logbot.feature.lock.LockScreen
+import de.phytech.logbot.feature.login.LoginScreen
+import de.phytech.logbot.feature.login.MfaScreen
+import de.phytech.logbot.feature.setup.SetupScreen
+import de.phytech.logbot.feature.shell.MainShell
+import javax.inject.Inject
 
-class MainActivity : AppCompatActivity(), WebHost {
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity() {
 
-    private lateinit var bottomNav: BottomNavigationView
-    private var currentTag: String = TAG_STATUS
+    @Inject
+    lateinit var credentialStore: CredentialStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        if (!Credentials.isConfigured(this)) {
-            startActivity(Intent(this, SetupActivity::class.java))
-            finish()
-            return
-        }
-
-        // App-Lock: bei aktivierter Biometrie zuerst entsperren lassen. Bei
-        // Abbruch schliesst die App, ohne dass ein Token entschluesselt wurde.
-        if (Credentials.biometricEnabled(this)) {
-            promptBiometric(onSuccess = { buildUi(savedInstanceState) }, onFailure = { finish() })
-        } else {
-            buildUi(savedInstanceState)
+        enableEdgeToEdge()
+        val start = if (credentialStore.isLoggedIn) Routes.MAIN else Routes.SETUP
+        val needsLock = credentialStore.isLoggedIn && credentialStore.biometricEnabled
+        setContent {
+            LogbotTheme {
+                var unlocked by rememberSaveable { mutableStateOf(!needsLock) }
+                if (unlocked) {
+                    LogbotAppRoot(startDestination = start)
+                } else {
+                    LockScreen(onUnlock = { authenticate { unlocked = true } })
+                    LaunchedEffect(Unit) { authenticate { unlocked = true } }
+                }
+            }
         }
     }
 
-    private fun promptBiometric(onSuccess: () -> Unit, onFailure: () -> Unit) {
-        val info = BiometricPrompt.PromptInfo.Builder()
-            .setTitle(getString(R.string.biometric_prompt_title))
-            .setSubtitle(getString(R.string.biometric_prompt_subtitle))
-            .setAllowedAuthenticators(
-                BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
-            )
-            .build()
-        BiometricPrompt(
+    /** Geräte-Authentifizierung (Biometrie/PIN). Bei Abbruch wird die App geschlossen. */
+    private fun authenticate(onSuccess: () -> Unit) {
+        val prompt = BiometricPrompt(
             this,
             ContextCompat.getMainExecutor(this),
             object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) =
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     onSuccess()
-
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) =
-                    onFailure()
-            }
-        ).authenticate(info)
-    }
-
-    private fun buildUi(savedInstanceState: Bundle?) {
-        setContentView(R.layout.activity_main)
-
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-
-        bottomNav = findViewById(R.id.bottomNav)
-        bottomNav.setOnItemSelectedListener { item ->
-            show(tagFor(item.itemId))
-            true
-        }
-        // Zweiter Tipp auf denselben Bereich: nichts tun statt neu aufzubauen.
-        bottomNav.setOnItemReselectedListener { }
-
-        currentTag = savedInstanceState?.getString(STATE_TAG) ?: TAG_STATUS
-        show(currentTag)
-        bottomNav.selectedItemId = itemFor(currentTag)
-
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                val web = supportFragmentManager.findFragmentByTag(TAG_WEB) as? WebFragment
-                when {
-                    currentTag == TAG_WEB && web?.canGoBack() == true -> web.goBack()
-                    currentTag != TAG_STATUS -> {
-                        show(TAG_STATUS)
-                        bottomNav.selectedItemId = R.id.nav_status
-                    }
-                    else -> {
-                        isEnabled = false
-                        onBackPressedDispatcher.onBackPressed()
-                    }
                 }
-            }
-        })
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    finish()
+                }
+            },
+        )
+        val info = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Logbot entsperren")
+            .setSubtitle("Mit Fingerabdruck, Gesicht oder Geräte-PIN bestätigen")
+            .setAllowedAuthenticators(Biometrics.ALLOWED)
+            .build()
+        prompt.authenticate(info)
     }
+}
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putString(STATE_TAG, currentTag)
-    }
+@Composable
+private fun LogbotAppRoot(startDestination: String) {
+    val nav = rememberNavController()
 
-    // --- Bereiche -----------------------------------------------------------
-
-    private fun show(tag: String) {
-        val manager = supportFragmentManager
-        val transaction = manager.beginTransaction().setReorderingAllowed(true)
-
-        var target = manager.findFragmentByTag(tag)
-        if (target == null) {
-            target = create(tag)
-            transaction.add(R.id.contentFrame, target, tag)
+    val toMain: () -> Unit = {
+        nav.navigate(Routes.MAIN) {
+            popUpTo(Routes.SETUP) { inclusive = true }
+            launchSingleTop = true
         }
-        for (existing in manager.fragments) {
-            val existingTag = existing.tag ?: continue
-            if (existing !== target && existingTag in ALL_TAGS) transaction.hide(existing)
-        }
-        transaction.show(target).commit()
-
-        currentTag = tag
-        setTitle(titleFor(tag))
     }
 
-    private fun create(tag: String): Fragment = when (tag) {
-        TAG_LOGS -> LogsFragment()
-        TAG_MAIL -> MailFragment()
-        TAG_WEB -> WebFragment()
-        else -> StatusFragment()
-    }
-
-    private fun tagFor(itemId: Int): String = when (itemId) {
-        R.id.nav_logs -> TAG_LOGS
-        R.id.nav_mail -> TAG_MAIL
-        R.id.nav_web -> TAG_WEB
-        else -> TAG_STATUS
-    }
-
-    private fun itemFor(tag: String): Int = when (tag) {
-        TAG_LOGS -> R.id.nav_logs
-        TAG_MAIL -> R.id.nav_mail
-        TAG_WEB -> R.id.nav_web
-        else -> R.id.nav_status
-    }
-
-    private fun titleFor(tag: String): Int = when (tag) {
-        TAG_LOGS -> R.string.nav_logs
-        TAG_MAIL -> R.string.nav_mail
-        TAG_WEB -> R.string.nav_web
-        else -> R.string.nav_status
-    }
-
-    /** Aus MailFragment: in die Weboberflaeche wechseln und dort einen Pfad oeffnen. */
-    override fun openWeb(path: String) {
-        show(TAG_WEB)
-        bottomNav.selectedItemId = R.id.nav_web
-        (supportFragmentManager.findFragmentByTag(TAG_WEB) as? WebFragment)?.open(path)
-    }
-
-    // --- Menue --------------------------------------------------------------
-
-    override fun onCreateOptionsMenu(menu: android.view.Menu): Boolean {
-        menuInflater.inflate(R.menu.main, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean = when (item.itemId) {
-        R.id.action_biometric -> {
-            toggleBiometric()
-            true
-        }
-        R.id.action_disconnect -> {
-            confirmDisconnect()
-            true
-        }
-        R.id.action_about -> {
-            showAbout()
-            true
-        }
-        else -> super.onOptionsItemSelected(item)
-    }
-
-    override fun onPrepareOptionsMenu(menu: android.view.Menu): Boolean {
-        menu.findItem(R.id.action_biometric)?.isChecked = Credentials.biometricEnabled(this)
-        return super.onPrepareOptionsMenu(menu)
-    }
-
-    private fun toggleBiometric() {
-        val available = BiometricManager.from(this).canAuthenticate(
-            BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                BiometricManager.Authenticators.DEVICE_CREDENTIAL
-        ) == BiometricManager.BIOMETRIC_SUCCESS
-
-        if (!available) {
-            AlertDialog.Builder(this)
-                .setMessage(R.string.biometric_unavailable)
-                .setPositiveButton(android.R.string.ok, null)
-                .show()
-            return
-        }
-        Credentials.setBiometricEnabled(this, !Credentials.biometricEnabled(this))
-        invalidateOptionsMenu()
-    }
-
-    private fun confirmDisconnect() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.action_disconnect)
-            .setMessage(R.string.disconnect_confirm)
-            .setNegativeButton(R.string.action_cancel, null)
-            .setPositiveButton(R.string.action_disconnect) { _, _ ->
-                Credentials.clear(this)
-                startActivity(Intent(this, SetupActivity::class.java))
-                finish()
-            }
-            .show()
-    }
-
-    private fun showAbout() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.app_name)
-            .setMessage(
-                getString(
-                    R.string.about_body,
-                    Credentials.appVersionName(this),
-                    Credentials.instanceUrl(this).orEmpty()
-                )
+    NavHost(navController = nav, startDestination = startDestination) {
+        composable(Routes.SETUP) {
+            SetupScreen(
+                onNeedsLogin = { nav.navigate(Routes.LOGIN) },
+                onAuthenticated = toMain,
             )
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
-    }
-
-    companion object {
-        private const val STATE_TAG = "current_tag"
-        private const val TAG_STATUS = "status"
-        private const val TAG_LOGS = "logs"
-        private const val TAG_MAIL = "mail"
-        private const val TAG_WEB = "web"
-        private val ALL_TAGS = setOf(TAG_STATUS, TAG_LOGS, TAG_MAIL, TAG_WEB)
+        }
+        composable(Routes.LOGIN) {
+            LoginScreen(
+                onAuthenticated = toMain,
+                onMfaRequired = { token -> nav.navigate("${Routes.MFA}/$token") },
+                onBack = { nav.popBackStack() },
+            )
+        }
+        composable(
+            route = "${Routes.MFA}/{mfaToken}",
+            arguments = listOf(navArgument("mfaToken") { type = NavType.StringType }),
+        ) { entry ->
+            MfaScreen(
+                mfaToken = entry.arguments?.getString("mfaToken").orEmpty(),
+                onAuthenticated = toMain,
+                onBack = { nav.popBackStack() },
+            )
+        }
+        composable(Routes.MAIN) {
+            MainShell(
+                onLoggedOut = {
+                    nav.navigate(Routes.SETUP) {
+                        popUpTo(Routes.MAIN) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
     }
 }

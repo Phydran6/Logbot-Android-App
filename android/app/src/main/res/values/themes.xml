@@ -5,8 +5,8 @@
     Version:     1.0 - 05.04.2026.15.44.55
 
     Beschreibung:
-    Theme-Definitionen der App. Basiert auf Material3 DayNight ohne ActionBar,
-    damit die WebView den gesamten Bildschirm nutzen kann.
+    App-/Fenster-Theme. Material3 DayNight ohne ActionBar – dient als Fenster-Hülle
+    für die Compose-UI (Farben kommen aus LogbotTheme in Compose).
 -->
 <resources xmlns:tools="http://schemas.android.com/tools">
 

@@ -1,12 +1,3 @@
-# ─── WebView ──────────────────────────────────────────────────────────────────
-# WebView-Klassen nicht entfernen
--keepclassmembers class * extends android.webkit.WebViewClient {
-    public *;
-}
--keepclassmembers class * extends android.webkit.WebChromeClient {
-    public *;
-}
-
 # ─── ZXing / QR-Code Scanner ──────────────────────────────────────────────────
 -keep class com.journeyapps.** { *; }
 -keep class com.google.zxing.** { *; }
@@ -22,10 +13,28 @@
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
 
-# ─── JS-Bruecke zur Weboberflaeche ────────────────────────────────────────────
-# Die Methoden werden nur aus JavaScript aufgerufen, R8 sieht keinen Aufrufer.
-# Die AGP-Standardregeln decken @JavascriptInterface bereits ab - hier noch
-# einmal ausdruecklich, weil ein stiller Verlust erst auf dem Geraet auffiele.
--keepclassmembers class de.phytech.logbot.LogbotBridge {
-    @android.webkit.JavascriptInterface <methods>;
+# ─── kotlinx.serialization ────────────────────────────────────────────────────
+# Der Serialisierungs-Compiler legt je @Serializable-Klasse einen Companion mit
+# serializer() an. R8 sieht keinen Aufrufer dafuer und wuerde ihn entfernen -
+# zur Laufzeit gaebe es dann "Serializer for class ... not found".
+#
+# Wichtig, weil der Release-Build minify nutzt: Im frueheren Zweig wurde nur
+# Debug gebaut, diese Regeln waren dort nie noetig.
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.**
+-keepclassmembers class kotlinx.serialization.json.** {
+    *** Companion;
 }
+-keep,includedescriptorclasses class de.phytech.logbot.**$$serializer { *; }
+-keepclassmembers class de.phytech.logbot.** {
+    *** Companion;
+}
+-keepclasseswithmembers class de.phytech.logbot.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# ─── Retrofit ─────────────────────────────────────────────────────────────────
+# Die Schnittstellen werden per Reflection ueber ihre generischen Rueckgabetypen
+# ausgewertet; ohne Signature-Attribut verliert Retrofit den Typ.
+-keepattributes Signature, Exceptions
+-keep,allowobfuscation interface de.phytech.logbot.data.api.**
