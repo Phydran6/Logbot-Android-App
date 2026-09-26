@@ -1,7 +1,17 @@
 import java.util.Properties
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 plugins {
+    // AGP 9 hat Built-in-Kotlin (kein kotlin.android-Plugin); kotlin.compose
+    // aktiviert den Compose-Compiler (Version muss zur Built-in-Kotlin-Version passen).
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+    // KSP statt kapt (kapt ist mit AGP-9-Built-in-Kotlin inkompatibel); Hilt nutzt KSP.
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 val signingProps = Properties().apply {
@@ -10,8 +20,26 @@ val signingProps = Properties().apply {
 }
 val hasReleaseSigning = signingProps.getProperty("storeFile") != null
 
-val ciVersionCode = (project.findProperty("logbot.versionCode") as String?)?.toIntOrNull()
-val ciVersionName = project.findProperty("logbot.versionName") as String?
+// --- Auto-Versioning --------------------------------------------------------
+// Kein manuelles Bumpen mehr. Die Version wird in CI aus Git berechnet und per
+// Gradle-Property übergeben (siehe .github/workflows/build-debug.yml):
+//   -PlogbotVersionCode = Commit-Anzahl (monoton steigend)
+//   -PlogbotVersionName = Datum des letzten Commits (JAHR.MONAT.TAG.STD.MIN.SEK)
+//                         + "-alpha" + Kurz-SHA
+// Lokale Builds ohne diese Properties nutzen einen Datums-Fallback ("-alpha-dev").
+// Bewusst kein Git-Aufruf in Gradle (Configuration-Cache-sicher, keine Prozess-Exec).
+// Die Namen folgen der Release-Kette in .github/workflows/release.yml
+// (-Plogbot.versionCode / -Plogbot.versionName). Der alte Name aus dem
+// native-rewrite-Zweig wird weiter akzeptiert, damit Aufrufe von dort nicht
+// stillschweigend auf den Fallback zurueckfallen.
+fun versionProperty(vararg namen: String): String? =
+    namen.firstNotNullOfOrNull { project.findProperty(it) as String? }?.takeIf { it.isNotBlank() }
+
+val buildVersionCode = versionProperty("logbot.versionCode", "logbotVersionCode")
+    ?.toIntOrNull()?.coerceAtLeast(5) ?: 5
+val buildVersionName = versionProperty("logbot.versionName", "logbotVersionName")
+    ?: (ZonedDateTime.now(ZoneId.of("Europe/Berlin"))
+        .format(DateTimeFormatter.ofPattern("yyyy.MM.dd.HH.mm.ss")) + "-alpha-dev")
 
 android {
     namespace = "de.phytech.logbot"
@@ -25,15 +53,8 @@ android {
         applicationId = "de.phytech.logbot"
         minSdk = 24
         targetSdk = 36
-        // Version kommt aus der CI (-P-Parameter), damit ein Tag genuegt und
-        // niemand von Hand hochzaehlt. Die Werte hier sind der Stand fuer
-        // lokale Builds; die CI ueberschreibt beide.
-        //
-        // versionCode zaehlt mit der Lauf-Nummer hoch und startet bei 100 -
-        // die letzte von Hand gebaute Release trug die 4, ein Rueckwaertsschritt
-        // waere fuer Play ein Ausschlusskriterium.
-        versionCode = ciVersionCode ?: 5
-        versionName = ciVersionName ?: "1.0.0"
+        versionCode = buildVersionCode
+        versionName = buildVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -52,17 +73,10 @@ android {
     buildTypes {
         release {
             // Ohne signing.properties faellt der Build auf die Debug-Signatur
-            // zurueck, statt unsigniert zu bleiben. Grund: Ein unsigniertes APK
-            // laesst sich auf keinem Geraet installieren - das Release waere
-            // damit wertlos. Mit der Rueckfall-Signatur ist es installierbar,
-            // bleibt aber ein Release-Build (verkleinert, nicht debuggbar).
-            //
-            // Was der Rueckfall NICHT kann: Der Debug-Schluessel entsteht auf
-            // jedem Rechner neu. Zwei so gebaute Releases tragen darum
-            // verschiedene Signaturen, und Android verweigert das Ersetzen -
-            // man muss die App neu installieren. Fuer den Play Store ist er
-            // ohnehin nicht geeignet. Sobald die Secrets hinterlegt sind,
-            // greift automatisch wieder die echte Signatur.
+            // zurueck, statt unsigniert zu bleiben: Ein unsigniertes APK laesst
+            // sich auf keinem Geraet installieren, das Release waere wertlos.
+            // Fuer Play taugt der Rueckfall nicht, und zwischen zwei so
+            // gebauten Releases gibt es keinen Update-Pfad - siehe docs/RELEASE.md.
             signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("release")
             } else {
@@ -75,32 +89,66 @@ android {
             )
         }
     }
+
+    buildFeatures {
+        compose = true
+    }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     lint {
-        // Lint soll melden, nicht abbrechen. Ein Hinweis auf eine veraltete
-        // API ist kein Grund, den Build einer App zu stoppen, die laeuft -
-        // der Bericht liegt trotzdem im Artefakt.
+        // Lint soll melden, nicht abbrechen. Der Bericht liegt unter
+        // app/build/reports/lint-results-debug.html.
         abortOnError = false
         warningsAsErrors = false
     }
+    // Kotlin-jvmTarget richtet sich bei Built-in-Kotlin automatisch nach targetCompatibility (17).
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
+
+    // Compose
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.graphics)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+
+    // Material Components – wird für das XML-App-Theme (Theme.Material3.*) benötigt
     implementation(libs.material)
-    implementation(libs.androidx.activity)
-    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.appcompat)
+
+    // Sicherer Token-Speicher, Biometrie, QR-Scan
     implementation(libs.androidx.security.crypto)
-    implementation(libs.zxing.android.embedded)
     implementation(libs.androidx.biometric)
-    implementation(libs.androidx.recyclerview)
-    implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.zxing.android.embedded)
+
+    // DI (Hilt) – Annotation-Processing via KSP (kapt ist mit AGP-9-Built-in-Kotlin inkompatibel)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    // Netzwerk
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.kotlinx.serialization)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.kotlinx.serialization.json)
+
+    debugImplementation(libs.compose.ui.tooling)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.compose.bom))
 }

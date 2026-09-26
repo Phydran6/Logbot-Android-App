@@ -9,6 +9,8 @@ Fünf Seiten. Jede beantwortet eine Frage.
 | Seite | Beantwortet |
 |:--|:--|
 | [ARCHITEKTUR.md](ARCHITEKTUR.md) | Wie ist die App aufgebaut, und warum so? |
+| [UEBERSICHT.md](UEBERSICHT.md) | Kompakter Überblick: Stack, Funktionen, Stolpersteine |
+| [ROADMAP.md](ROADMAP.md) | Welche Phasen sind fertig, was ist offen? |
 | [SERVER-API.md](SERVER-API.md) | Welche Endpunkte nutzt die App, was ist Pflicht, was optional? |
 | [RELEASE.md](RELEASE.md) | Wie kommt eine neue Version heraus? |
 | [STORE.md](STORE.md) | Was ist zu tun, damit die App in Play Store und App Store landet? |
@@ -19,7 +21,8 @@ Fünf Seiten. Jede beantwortet eine Frage.
 
 ## Kurz gefasst
 
-Logbot ist eine Client-App zu einem selbst betriebenen Server. Sie speichert
+Logbot ist eine **native** Client-App zu einem selbst betriebenen Server —
+Jetpack Compose, Daten über die REST-API, kein WebView mehr. Sie speichert
 nichts eigenes außer den Zugangsdaten zu **einer** Instanz, hat keine
 Benutzerkonten, keine Cloud und keine Telemetrie.
 

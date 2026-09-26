@@ -11,7 +11,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # write statt read: Der Diagnose-Schritt unten postet die Gradle-
+  # Fehlerursache als Commit-Kommentar. Die Protokolle eines Laufs sind ueber
+  # die API nur mit Token lesbar, ein Commit-Kommentar dagegen oeffentlich.
+  contents: write
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -56,7 +59,32 @@ jobs:
       # ein Hinweis auf eine veraltete API soll den Lauf melden, nicht stoppen.
       - name: Tests, Lint und Debug-APK
         working-directory: android
-        run: ./gradlew testDebugUnitTest lintDebug assembleDebug --no-daemon --stacktrace
+        run: |
+          # pipefail, damit tee den Fehlschlag von gradlew nicht verschluckt.
+          set -o pipefail
+          ./gradlew testDebugUnitTest lintDebug assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
+
+      # Diagnose: Bei Fehlschlag die eigentliche Ursache als Commit-Kommentar
+      # posten. Die Protokolle eines Actions-Laufs sind ueber die API nur mit
+      # Token lesbar - ein Commit-Kommentar ist es ohne. Ohne diesen Schritt
+      # steht man vor einem roten Lauf, ohne zu wissen, woran er lag.
+      - name: Fehlerursache als Commit-Kommentar melden
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          log=android/build.log
+          [ -f "$log" ] || { echo "Kein build.log - der Fehlschlag lag vor Gradle."; exit 0; }
+          {
+            echo "### Gradle: What went wrong"
+            sed -n "/\* What went wrong:/,/\* Try:/p" "$log"
+            echo
+            echo "### Fehler- und Compiler-Zeilen"
+            grep -nE "^e: |^w: |: error:|FAILURE|Caused by|A problem occurred|Could not|Unsupported|Cannot|Configuration cache problems|BUILD FAILED" "$log" | head -n 60
+          } > bericht.txt
+          echo "----- bericht.txt -----"; cat bericht.txt
+          gh api -X POST "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" \
+            -f body="$(cat bericht.txt)" || true
 
       - name: APK mit Commit-Kuerzel benennen
         run: |

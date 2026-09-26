@@ -10,7 +10,18 @@ gewechselt wurde, steht in [RELEASE.md](RELEASE.md#versionsnummern).
 
 ## [Unreleased]
 
+### Geändert
+- **Die native Compose-App aus dem Zweig `native-rewrite` ersetzt die bisherige App.** Beide Zweige hatten unabhängig voneinander den WebView-Wrapper abgelöst: `main` mit einer flacheren Fassung auf Views/XML und vier Bereichen, `native-rewrite` mit der eigentlichen Neuentwicklung — Jetpack Compose, Material 3, Hilt, Retrofit, 65 Kotlin-Dateien, alle neun Server-Screens. Übernommen wurde die Compose-Fassung; sie liegt jetzt unter `android/app/`.
+- Aufbau je Screen: DTO (`@Serializable`) → Retrofit-API → Repository (`safeApiCall` → `UiState`) → `@HiltViewModel` → Screen mit Lade-, Fehler- und Leer-Zustand. Die Seitenleiste bildet die Sidebar des Servers nach und blendet Admin-Einträge anhand der Rolle aus `/api/auth/me` aus.
+- Build umgestellt auf AGP 9 mit Built-in-Kotlin (kein `kotlin.android`-Plugin), Compose-Compiler 2.2.10, KSP statt kapt für Hilt, `android.disallowKotlinSourceSets=false`.
+- `docs/ARCHITEKTUR.md`, `docs/SERVER-API.md`, `README.md` und `android/README.md` beschrieben die abgelöste Views-App und sind auf den tatsächlichen Stand gebracht. `docs/ROADMAP.md` und `docs/UEBERSICHT.md` kamen aus dem Rewrite-Zweig dazu.
+
+### Entfernt
+- Der **Mail-Bereich** samt der optionalen `/api/mail`-Endpunkte. Die Compose-App hat ihn nie gehabt, und im Server gab es die Endpunkte ohnehin nicht. Die iOS-App trägt ihn noch — siehe `ios/README.md`.
+
 ### Behoben
+- `ci.yml` meldet die Gradle-Fehlerursache jetzt als Commit-Kommentar. Die Protokolle eines Laufs sind über die API nur mit Token lesbar; ohne diesen Schritt steht man vor einem roten Lauf, ohne zu wissen, woran er lag. Der Schritt stammt aus `native-rewrite` und hat beim ersten Einsatz sofort eine BOM in `libs.versions.toml` als Ursache benannt.
+- R8-Regeln für kotlinx.serialization und Retrofit ergänzt. Der Rewrite-Zweig baute nur Debug; hier baut `release.yml` mit Minify, und ohne die Regeln entfernt R8 die erzeugten Serializer.
 - Ohne hinterlegten Keystore blieb das Release-APK unsigniert und ließ sich damit auf keinem Gerät installieren — das Release war praktisch wertlos. Der Build fällt jetzt auf die Debug-Signatur zurück statt gar nicht zu signieren; heraus kommt ein normaler Release-Build (verkleinert, nicht debuggbar), der sich installieren lässt, unter dem Namen `Logbot-<version>-android-testsignatur.apk`. Für den Play Store taugt er nicht, und zwischen zwei so gebauten Releases gibt es keinen Update-Pfad — beides steht in [RELEASE.md](RELEASE.md#ohne-keystore-rückfall-auf-die-debug-signatur). Mit hinterlegten Secrets greift unverändert die echte Signatur.
 
 
@@ -21,7 +32,7 @@ Stichwort: **Native Bereiche, iOS und Store-Vorbereitung**
 ### Hinzugefügt
 - **Status-Bereich**: Serverzustand aus `GET /api/health/detailed` — Erreichbarkeit, Prozessor, Arbeitsspeicher und Platte als Balken, Datenbank, Agenten online, Logaufkommen. Aktualisiert sich alle 20 Sekunden, solange die Ansicht sichtbar ist, dazu Ziehen zum Neuladen.
 - **Logs-Bereich**: native Liste statt Tabelle im WebView. Nachricht groß, Zeit/Host/Quelle klein darunter, Schweregrad als Farbstreifen, Trennzeile bei Tageswechsel. Volltextsuche, Filter nach Schweregrad-Gruppe und Logtyp (Werte kommen aus `GET /api/logs/filter-options`, also ohne App-Update erweiterbar), Nachladen beim Scrollen, Detailblatt mit Rohtext aus `GET /api/logs/{id}`.
-- **Mail-Bereich**: Postfix-Zustand und Warteschlange aus dem optionalen `GET /api/mail/status`, Passwort-Reset über das optionale `POST /api/mail/password-reset`, dazu die letzten Mail-Logzeilen aus `GET /api/logs?category=mail`. Kennt der Server die `/api/mail`-Endpunkte nicht (404), zeigt der Bereich einen Hinweis statt einer Fehlermeldung und bleibt benutzbar. Kontrakt: [SERVER-API.md](SERVER-API.md#optional-apimail).
+- **Mail-Bereich**: Postfix-Zustand und Warteschlange aus dem optionalen `GET /api/mail/status`, Passwort-Reset über das optionale `POST /api/mail/password-reset`, dazu die letzten Mail-Logzeilen aus `GET /api/logs?category=mail`. Kennt der Server die `/api/mail`-Endpunkte nicht (404), zeigt der Bereich einen Hinweis statt einer Fehlermeldung und bleibt benutzbar. Kontrakt: [SERVER-API.md](SERVER-API.md).
 - **iOS-App** in `ios/`: SwiftUI ab iOS 16 mit denselben vier Bereichen, Schlüsselbund für die Zugangsdaten, App-Sperre über Face ID / Touch ID / Code. Das Xcode-Projekt entsteht aus `ios/project.yml` über XcodeGen und liegt nicht im Repository.
 - **Apple- und Play-Kette**: [`ios-signing.yml`](../.github/workflows/ios-signing.yml) (einmalig, erzeugt Zertifikat und Profil über `fastlane match`), [`release.yml`](../.github/workflows/release.yml) (signiertes AAB, APK und IPA je Tag), [`deploy.yml`](../.github/workflows/deploy.yml) (Play-Track `internal` und TestFlight). Fehlen Secrets, überspringen sich die Schritte mit einer Warnung statt zu scheitern.
 - **Prüfskripte** in `scripts/`: `check_apple_secrets.sh`, `check_match_repo.sh`, `run_fastlane.sh`, `ensure_ios_project.sh`, `extract_changelog.sh`.

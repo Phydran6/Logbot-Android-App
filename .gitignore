@@ -42,3 +42,10 @@ ios/.bundle/
 ios/vendor/
 fastlane/report.xml
 fastlane/README.md
+
+# --- Lokale Arbeitsablage ------------------------------------------------------
+# Heruntergeladene APKs, Release-Notizen, n8n-Exporte: Arbeitsmaterial, kein Code.
+build-artifacts/
+
+# Mitschrift des CI-Builds (siehe Diagnose-Schritt in ci.yml)
+build.log

@@ -1,6 +1,6 @@
 # Server-Schnittstelle
 
-Welche Endpunkte die App benutzt, was Pflicht ist und was optional.
+Welche Endpunkte die App benutzt.
 
 [← Doku-Übersicht](README.md) ·
 [Architektur](ARCHITEKTUR.md) ·
@@ -10,156 +10,101 @@ Welche Endpunkte die App benutzt, was Pflicht ist und was optional.
 
 ## Anmeldung
 
-Jede Anfrage trägt den App-Token als Kopfzeile:
+Jede Anfrage trägt den Token als Kopfzeile:
 
 ```http
 Authorization: Bearer <token>
 ```
 
-Den Token erzeugt die Weboberfläche unter **App verbinden**
-(`POST /api/auth/app-token`). Er entsteht nur aus einer bereits
-angemeldeten Web-Sitzung — auch dann, wenn der Server MFA verlangt. Die App
-kennt das Passwort nie.
+Zwei Wege führen dorthin:
 
-**401 oder 403** heißt: Token abgelaufen oder zurückgezogen. Die App löscht
-dann die Zugangsdaten und führt zurück in die Einrichtung.
+| Weg | Ablauf |
+|:--|:--|
+| **Passwort** | `POST /api/auth/login`; verlangt der Server MFA, antwortet er mit einem `mfa_token`, den `POST /api/auth/login/mfa` gegen TOTP oder Backup-Code einlöst |
+| **QR-Code** | Die Weboberfläche zeigt unter *App verbinden* einen kurzlebigen Token. `POST /api/auth/app-token/exchange` tauscht ihn gegen einen Access-Token |
+
+`GET /api/auth/me` liefert die Rolle. Danach richtet sich, welche Einträge die
+Seitenleiste zeigt — Administratoren sehen Users, Settings und Branding, andere
+nicht.
+
+**HTTP 401** heißt: Token abgelaufen oder zurückgezogen. Die App verwirft die
+Zugangsdaten und führt zurück zur Anmeldung.
 
 ---
 
-## Pflicht: was jeder Serverstand kann
+## Genutzte Endpunkte
 
-### `GET /api/health/detailed`
+Alles unten wird tatsächlich aufgerufen; die Zuordnung zum Screen steht dabei.
 
-Speist den Status-Bereich. Antwort:
+### Lesen
 
-```json
-{
-  "status": "healthy",
-  "version": "2026.08.14.14.00.00",
-  "uptime_seconds": 384512.4,
-  "cpu_percent": 7.3,
-  "memory_percent": 41.8,
-  "disk_percent": 63.0,
-  "database_connected": true,
-  "logs_total": 8123456,
-  "logs_last_24h": 91240,
-  "agents_total": 7,
-  "agents_online": 6
-}
-```
-
-`status` ist `healthy` oder `degraded`. Die App zeigt „Server läuft" nur,
-wenn `status` gesund **und** `database_connected` wahr ist.
-
-### `GET /api/logs`
-
-Speist die Logliste. Genutzte Parameter:
-
-| Parameter | Wofür |
+| Endpunkt | Screen |
 |:--|:--|
-| `page`, `page_size` | Seitenweises Nachladen, 50 je Seite |
-| `search` | Volltext in der Nachricht |
-| `hostname` | Teilstring des Hostnamens |
-| `min_severity` | Schweregrad-Gruppe: dieses Level und alles Dringendere |
-| `category` | Logtyp, siehe `filter-options` |
+| `GET /api/logs/stats` | Dashboard |
+| `GET /api/health/detailed` | Health |
+| `GET /api/logs` | Logs — Parameter für Suche, Level, Host, Quelle und Seitenweise |
+| `GET /api/logs/{id}` | Logs, Detailansicht |
+| `GET /api/agents` | Agents |
+| `GET /api/users` | Users |
+| `GET /api/webhooks` | Webhooks |
+| `GET /api/settings`, `GET /api/settings/database` | Settings |
+| `GET /api/branding/config` | Branding |
 
-Antwort: `{ "items": [...], "total": 0, "page": 1, "page_size": 50 }`.
-Ein Eintrag hat `id`, `hostname`, `ip_address`, `timestamp`, `level`,
-`source`, `message`.
+### Schreiben
+
+| Endpunkt | Screen |
+|:--|:--|
+| `POST`, `PUT`, `DELETE /api/users[/{id}]` | Users — anlegen, ändern, löschen |
+| `POST /api/users/{id}/mfa/reset` | Users — MFA zurücksetzen |
+| `POST`, `PUT`, `DELETE /api/webhooks[/{id}]` | Webhooks |
+| `POST /api/webhooks/{id}/regenerate-token` | Webhooks — Token neu |
+| `DELETE /api/agents/{id}` | Agents — löschen |
+| `PUT /api/settings/{key}` | Settings — Wert ändern |
+| `PUT /api/branding/config`, `POST /api/branding/reset` | Branding |
+
+Schreibende Aufrufe sind auf Administratoren beschränkt; die App blendet sie
+anhand der Rolle aus, der Server prüft sie erneut.
+
+---
+
+## Form der Antworten
+
+Die Datentypen liegen als `@Serializable`-DTOs unter
+`android/app/src/main/java/de/phytech/logbot/data/api/`. Sie sind die
+verbindliche Beschreibung — wer wissen will, welche Felder ankommen, liest
+dort, nicht hier: eine zweite Abschrift wäre nur eine, die irgendwann
+abweicht.
+
+Der Server veröffentlicht seine Spezifikation ohnehin selbst:
+
+- OpenAPI: `/api/openapi.json`
+- Swagger: `/api/docs`
 
 **Zeitstempel** kommen als ISO-8601 in UTC, teils ohne Zonenangabe
-(`2026-05-29T22:30:00.123456`). Die App liest sie als UTC und zeigt sie in
-der Gerätezone.
-
-### `GET /api/logs/{id}`
-
-Ein einzelner Eintrag samt `raw_message` und `facility`. Die App holt ihn
-erst beim Aufklappen der Detailansicht — der Rohtext ist oft ein Vielfaches
-der aufbereiteten Nachricht und würde jede Seite aufblähen.
-
-### `GET /api/logs/filter-options`
-
-Die Auswahllisten für die Filterreihen:
-
-```json
-{
-  "hostnames": ["web01", "mail01"],
-  "severities": [{"key": "error", "label": "Fehler und dringender"}],
-  "categories": [{"key": "mail", "label": "Mail"}]
-}
-```
-
-Die App kennt diese Listen **nicht** fest. Ein neuer Logtyp auf dem Server
-erscheint ohne App-Update.
+(`2026-05-29T22:30:00.123456`). Die App liest sie als UTC und zeigt sie in der
+Zeitzone des Geräts.
 
 ---
 
-## Optional: `/api/mail/*`
+## Fehlerbehandlung
 
-Diese beiden Endpunkte gibt es im Server noch nicht. Die App fragt sie an,
-behandelt **404 als „kennt der Serverstand noch nicht"** und zeigt einen
-Hinweis statt einer Fehlermeldung. Der Mail-Bereich bleibt auch ohne sie
-benutzbar: Die Logzeilen kommen aus `/api/logs?category=mail` und laufen
-mit jedem Stand.
+Jeder Aufruf läuft durch `safeApiCall` im Repository und endet in einem
+`UiState`:
 
-Dieser Abschnitt ist der Kontrakt — wer die Endpunkte im Server nachrüstet,
-findet hier, was die App erwartet.
-
-### `GET /api/mail/status`
-
-Zustand des Mailsystems auf dem Host.
-
-```json
-{
-  "postfix_running": true,
-  "queue_length": 0,
-  "deferred_length": 2,
-  "last_error": "",
-  "hostname": "mail01"
-}
-```
-
-| Feld | Herkunft auf dem Server |
+| Fall | Was der Nutzer sieht |
 |:--|:--|
-| `postfix_running` | `systemctl is-active postfix` über den vorhandenen Host-Zugriff (`hostexec.py`) |
-| `queue_length` | `mailq` bzw. `postqueue -p`, aktive Warteschlange |
-| `deferred_length` | dieselbe Quelle, zurückgestellte Nachrichten |
-| `last_error` | letzte Fehlerzeile aus dem Mail-Log, oder leer |
+| Erfolg | Die Daten |
+| Leere Liste | Ein Hinweis, dass nichts da ist |
+| HTTP 401 | Abmeldung, zurück zur Anmeldung |
+| Anderer Fehler | Fehlertext mit einem Knopf zum Wiederholen |
 
-Nur für angemeldete Benutzer. Ein kurzer Cache (wie bei
-`/api/health/detailed`) ist sinnvoll — die App fragt bei jedem Öffnen des
-Bereichs.
-
-### `POST /api/mail/password-reset`
-
-Stößt eine Reset-Mail über Postfix an.
-
-```json
-{ "login": "anna" }
-```
-
-Antwort **immer 200**, unabhängig davon, ob es das Konto gibt:
-
-```json
-{ "message": "Falls das Konto existiert, ist eine Mail unterwegs." }
-```
-
-> **Das ist Absicht.** Unterschiedliche Antworten für „gibt es" und „gibt es
-> nicht" machen den Endpunkt zu einem Verzeichnis aller Konten. Die App zeigt
-> die Antwort wörtlich an und formuliert nichts um.
-
-Sinnvolle Begrenzung auf dem Server: eine Handvoll Anfragen je Stunde und
-Absender, sonst wird der Endpunkt zum Mailversender für Fremde. Der Server
-bringt dafür bereits einen Limiter mit (`backend/app/limiter.py`).
-
-Solange der Endpunkt fehlt, sagt die App: Ein Administrator kann das Passwort
-in der Weboberfläche unter **Benutzer** ändern.
+Es gibt keinen Pfad, der einen Fehler verschluckt und mit leeren Daten
+weiterläuft.
 
 ---
 
 ## Was die App nicht anfasst
 
-Alles Schreibende außer dem Passwort-Reset. Benutzer anlegen, Webhooks
-ändern, Aufbewahrung einstellen, Updates auslösen, Server neu starten — das
-bleibt der Weboberfläche vorbehalten. Ein Fehlgriff auf einem Telefon ist zu
-leicht passiert.
+Server neu starten, Updates auslösen, Caddy oder die Netzwerk-Einstellungen
+ändern, Aufbewahrung ausführen. Das bleibt der Weboberfläche vorbehalten — ein
+Fehlgriff ist auf einem Telefon zu leicht passiert.
