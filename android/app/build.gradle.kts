@@ -92,6 +92,8 @@ android {
 
     buildFeatures {
         compose = true
+        // BuildConfig.DEBUG: Netzwerk-Protokoll nur im Debug-Build.
+        buildConfig = true
     }
 
     compileOptions {
@@ -122,6 +124,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     // Material Components – wird für das XML-App-Theme (Theme.Material3.*) benötigt
@@ -144,6 +147,13 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.kotlinx.serialization.json)
+
+    // Meldungen: Nachsehen im Hintergrund (WorkManager) und echter Push (UnifiedPush)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.unifiedpush.connector) {
+        exclude(group = "com.google.crypto.tink", module = "tink")
+    }
+    implementation(libs.tink.android)
 
     debugImplementation(libs.compose.ui.tooling)
 

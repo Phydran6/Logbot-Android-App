@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -33,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,7 +51,7 @@ fun SetupScreen(
     viewModel: SetupViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    var url by rememberSaveable { mutableStateOf("") }
+    var url by rememberSaveable { mutableStateOf(viewModel.previousUrl) }
     val version = rememberAppVersionName()
 
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
@@ -90,9 +92,11 @@ fun SetupScreen(
             OutlinedTextField(
                 value = url,
                 onValueChange = { url = it },
-                label = { Text("Instanz-URL (https://…)") },
+                label = { Text("Adresse deines Logbot-Servers") },
+                placeholder = { Text("logbot.example.de") },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
+                keyboardActions = KeyboardActions(onGo = { viewModel.connect(url, onNeedsLogin) }),
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -108,7 +112,14 @@ fun SetupScreen(
                 onClick = { startScan() },
                 enabled = !viewModel.loading,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("QR-Code scannen") }
+            ) { Text("QR-Code aus der Weboberfläche scannen") }
+            Text(
+                text = "Den Code zeigt die Weboberfläche unter „App verbinden“ – damit ist man ohne Passwort angemeldet.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp),
+            )
 
             if (viewModel.loading) {
                 Spacer(Modifier.height(20.dp))

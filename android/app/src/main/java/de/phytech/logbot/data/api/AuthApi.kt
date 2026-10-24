@@ -3,6 +3,7 @@
  */
 package de.phytech.logbot.data.api
 
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
@@ -30,4 +31,16 @@ interface AuthApi {
     /** QR-App-Login: einmaligen Token gegen vollwertiges Access-Token tauschen. */
     @POST("api/auth/app-token/exchange")
     suspend fun exchangeAppToken(@Body request: AppTokenExchangeRequest): TokenResponse
+
+    /** Anmelde-Link per Mail anfordern (Antwort immer gleich, egal ob die Adresse bekannt ist). */
+    @POST("api/auth/magic-link/request")
+    suspend fun requestMagicLink(@Body request: MagicLinkRequest): MagicLinkRequestResponse
+
+    /** Link einlösen – oder nachfragen, ob er auf einem anderen Gerät bestätigt wurde. */
+    @POST("api/auth/magic-link/exchange")
+    suspend fun exchangeMagicLink(@Body request: MagicLinkExchangeRequest): MagicLinkExchangeResponse
+
+    /** Passwort vergessen: der Server schickt einen Link zum Zurücksetzen (immer 202). */
+    @POST("api/auth/password/forgot")
+    suspend fun forgotPassword(@Body request: PasswordForgotRequest): Response<Unit>
 }

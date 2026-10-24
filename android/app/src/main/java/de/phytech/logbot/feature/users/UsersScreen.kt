@@ -53,6 +53,7 @@ fun UsersScreen(viewModel: UsersViewModel = hiltViewModel()) {
     var showForm by remember { mutableStateOf(false) }
     var formUser by remember { mutableStateOf<UserResponse?>(null) }
     var toDelete by remember { mutableStateOf<UserResponse?>(null) }
+    var confirmMfaReset by remember { mutableStateOf<UserResponse?>(null) }
 
     when (val s = viewModel.state) {
         is UiState.Loading -> LoadingState()
@@ -86,7 +87,7 @@ fun UsersScreen(viewModel: UsersViewModel = hiltViewModel()) {
     if (showForm) {
         UserFormDialog(
             existing = formUser,
-            onResetMfa = formUser?.let { u -> { viewModel.resetMfa(u.id) {} } },
+            onResetMfa = formUser?.let { u -> { confirmMfaReset = u } },
             onDismiss = { showForm = false },
             onSubmitCreate = { req -> viewModel.create(req) { showForm = false } },
             onSubmitUpdate = { req -> viewModel.update(formUser!!.id, req) { showForm = false } },
@@ -102,6 +103,34 @@ fun UsersScreen(viewModel: UsersViewModel = hiltViewModel()) {
                 TextButton(onClick = { viewModel.delete(user.id); toDelete = null }) { Text("Löschen") }
             },
             dismissButton = { TextButton(onClick = { toDelete = null }) { Text("Abbrechen") } },
+        )
+    }
+
+    confirmMfaReset?.let { user ->
+        AlertDialog(
+            onDismissRequest = { confirmMfaReset = null },
+            title = { Text("Zwei-Faktor zurücksetzen?") },
+            text = {
+                Text(
+                    "${user.username} meldet sich danach nur mit Passwort an und muss die " +
+                        "Authenticator-App neu einrichten. Nur tun, wenn die Person sich ausgewiesen hat.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.resetMfa(user.id) { showForm = false }
+                    confirmMfaReset = null
+                }) { Text("Zurücksetzen") }
+            },
+            dismissButton = { TextButton(onClick = { confirmMfaReset = null }) { Text("Abbrechen") } },
+        )
+    }
+
+    viewModel.info?.let { msg ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissInfo,
+            confirmButton = { TextButton(onClick = viewModel::dismissInfo) { Text("OK") } },
+            text = { Text(msg) },
         )
     }
 
@@ -156,6 +185,7 @@ private fun UserFormDialog(
     var password by remember(existing) { mutableStateOf("") }
     var admin by remember(existing) { mutableStateOf(existing?.role == "admin") }
     var active by remember(existing) { mutableStateOf(existing?.isActive ?: true) }
+    var problem by remember(existing) { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -177,14 +207,17 @@ private fun UserFormDialog(
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("E-Mail (optional)") },
+                    label = { Text("E-Mail") },
+                    supportingText = { Text("Für Anmelde-Links und Passwort-Reset") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text(if (isCreate) "Passwort" else "Neues Passwort (optional)") },
+                    supportingText = { Text("Mindestens 8 Zeichen") },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -194,6 +227,7 @@ private fun UserFormDialog(
                     Text("Administrator", modifier = Modifier.weight(1f))
                     Switch(checked = admin, onCheckedChange = { admin = it })
                 }
+                problem?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 if (!isCreate) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Aktiv", modifier = Modifier.weight(1f))
@@ -209,11 +243,18 @@ private fun UserFormDialog(
         },
         confirmButton = {
             TextButton(onClick = {
+                problem = when {
+                    isCreate && username.trim().length < 3 -> "Der Benutzername braucht mindestens 3 Zeichen."
+                    !EMAIL.matches(email.trim()) -> "Bitte eine gültige E-Mail-Adresse eingeben."
+                    (isCreate || password.isNotEmpty()) && password.length < 8 -> "Das Passwort braucht mindestens 8 Zeichen."
+                    else -> null
+                }
+                if (problem != null) return@TextButton
                 if (isCreate) {
                     onSubmitCreate(
                         UserCreateRequest(
                             username = username.trim(),
-                            email = email.trim().ifBlank { null },
+                            email = email.trim(),
                             role = if (admin) "admin" else "user",
                             password = password,
                         ),
@@ -233,3 +274,5 @@ private fun UserFormDialog(
         dismissButton = { TextButton(onClick = onDismiss) { Text("Abbrechen") } },
     )
 }
+
+private val EMAIL = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")

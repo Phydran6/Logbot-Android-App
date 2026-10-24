@@ -7,6 +7,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class HealthDto(
+    val status: String = "",
+    val version: String = "",
+)
+
+@Serializable
 data class HealthDetailedDto(
     val status: String = "",
     val version: String = "",

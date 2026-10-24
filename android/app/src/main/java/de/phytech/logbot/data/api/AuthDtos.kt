@@ -46,3 +46,41 @@ data class UserResponse(
     @SerialName("is_active") val isActive: Boolean = true,
     @SerialName("created_at") val createdAt: String? = null,
 )
+
+@Serializable
+data class MagicLinkRequest(
+    val email: String,
+    @SerialName("code_challenge") val codeChallenge: String,
+    @SerialName("device_name") val deviceName: String,
+)
+
+@Serializable
+data class MagicLinkRequestResponse(
+    @SerialName("request_id") val requestId: String,
+    /** Code für die Bestätigung auf einem anderen Gerät – steht nicht in der Mail. */
+    @SerialName("match_code") val matchCode: String = "",
+    @SerialName("expires_in_seconds") val expiresInSeconds: Int = 900,
+    @SerialName("poll_interval_seconds") val pollIntervalSeconds: Int = 3,
+)
+
+@Serializable
+data class MagicLinkExchangeRequest(
+    @SerialName("request_id") val requestId: String,
+    @SerialName("code_verifier") val codeVerifier: String,
+    /** Nur wenn der Link auf diesem Gerät geöffnet wurde. */
+    val token: String? = null,
+)
+
+/** `status`: pending | ok | mfa_required */
+@Serializable
+data class MagicLinkExchangeResponse(
+    val status: String = "pending",
+    @SerialName("access_token") val accessToken: String? = null,
+    @SerialName("mfa_token") val mfaToken: String? = null,
+    @SerialName("poll_interval_seconds") val pollIntervalSeconds: Int? = null,
+)
+
+@Serializable
+data class PasswordForgotRequest(
+    val login: String,
+)

@@ -1,65 +1,72 @@
 package de.phytech.logbot.feature.shell
 
-import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import de.phytech.logbot.core.auth.CredentialStore
-import de.phytech.logbot.core.security.Biometrics
-import de.phytech.logbot.data.api.UserResponse
+import de.phytech.logbot.core.notifications.PushManager
+import de.phytech.logbot.core.ui.UiState
 import de.phytech.logbot.data.repository.AuthRepository
+import de.phytech.logbot.data.repository.MobileRepository
+import de.phytech.logbot.data.repository.NotificationsRepository
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val repo: AuthRepository,
-    private val credentialStore: CredentialStore,
-    @ApplicationContext appContext: Context,
+    @ApplicationContext private val context: Context,
+    private val push: PushManager,
+    private val auth: AuthRepository,
+    private val mobile: MobileRepository,
+    private val notifications: NotificationsRepository,
 ) : ViewModel() {
 
-    var user by mutableStateOf<UserResponse?>(null)
+    var username by mutableStateOf("")
         private set
-    var sessionExpired by mutableStateOf(false)
+    var isAdmin by mutableStateOf(false)
         private set
-
-    val isAdmin: Boolean get() = user?.role == "admin"
-
-    /** Geräte-Sperre verfügbar (Biometrie oder PIN/Muster eingerichtet)? */
-    val biometricAvailable: Boolean = Biometrics.isAvailable(appContext)
-
-    var biometricEnabled by mutableStateOf(credentialStore.biometricEnabled)
+    var serverName by mutableStateOf("Logbot")
         private set
 
-    fun toggleBiometric(enabled: Boolean) {
-        if (enabled && !biometricAvailable) return
-        credentialStore.biometricEnabled = enabled
-        biometricEnabled = enabled
-    }
+    val unread: StateFlow<Int> = notifications.unread
 
     init {
         refresh()
+        viewModelScope.launch { push.resyncAfterLogin(context) }
     }
 
     fun refresh() {
         viewModelScope.launch {
-            try {
-                user = repo.fetchUser()
-            } catch (e: HttpException) {
-                if (e.code() == 401) {
-                    repo.logout()
-                    sessionExpired = true
+            when (val r = mobile.refreshBootstrap()) {
+                is UiState.Success -> {
+                    username = r.data.user.username
+                    isAdmin = r.data.user.isAdmin || r.data.user.role == "admin"
+                    serverName = r.data.server.name.ifBlank { "Logbot" }
                 }
-            } catch (_: Exception) {
-                // Netzwerkfehler hier ignorieren; UI bleibt nutzbar, Retry möglich.
+                is UiState.Error -> {
+                    // Ältere Server ohne /api/app: die Rolle kommt dann aus /api/auth/me.
+                    runCatching { auth.fetchUser() }.onSuccess {
+                        username = it.username
+                        isAdmin = it.role == "admin"
+                    }
+                }
+                UiState.Loading -> Unit
             }
+            // Zahl der ungelesenen Meldungen fürs Menü; Fehler hier sind egal.
+            notifications.page()
         }
     }
 
-    fun logout() = repo.logout()
+    fun logout(onDone: () -> Unit) {
+        viewModelScope.launch {
+            auth.logout()
+            mobile.clear()
+            onDone()
+        }
+    }
 }

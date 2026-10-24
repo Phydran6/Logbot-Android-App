@@ -1,22 +1,17 @@
 /**
- * Retrofit-Interface für Agents (Liste + Löschen).
+ * Retrofit-Interface für die Geräte-Verwaltung. Die Liste kommt aus der
+ * App-Schnittstelle (MobileApi.devices), hier bleibt nur das Löschen.
  */
 package de.phytech.logbot.data.api
 
 import retrofit2.Response
 import retrofit2.http.DELETE
-import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface AgentsApi {
 
-    @GET("api/agents")
-    suspend fun list(
-        @Query("page") page: Int = 1,
-        @Query("page_size") pageSize: Int = 200,
-    ): AgentListResponse
-
+    /** [purgeLogs]: die Logs des Geräts mit löschen (sonst bleiben sie erhalten). */
     @DELETE("api/agents/{id}")
-    suspend fun delete(@Path("id") id: Int): Response<Unit>
+    suspend fun delete(@Path("id") id: Int, @Query("purge_logs") purgeLogs: Boolean = false): Response<Unit>
 }
