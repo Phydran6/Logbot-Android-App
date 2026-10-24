@@ -57,27 +57,23 @@ data class MagicLinkRequest(
 @Serializable
 data class MagicLinkRequestResponse(
     @SerialName("request_id") val requestId: String,
-    /** Code für die Bestätigung auf einem anderen Gerät – steht nicht in der Mail. */
-    @SerialName("match_code") val matchCode: String = "",
     @SerialName("expires_in_seconds") val expiresInSeconds: Int = 900,
-    @SerialName("poll_interval_seconds") val pollIntervalSeconds: Int = 3,
 )
 
 @Serializable
 data class MagicLinkExchangeRequest(
     @SerialName("request_id") val requestId: String,
     @SerialName("code_verifier") val codeVerifier: String,
-    /** Nur wenn der Link auf diesem Gerät geöffnet wurde. */
-    val token: String? = null,
+    /** Token aus dem angetippten Link. */
+    val token: String,
 )
 
-/** `status`: pending | ok | mfa_required */
+/** `status`: ok | mfa_required (pending nur ohne Token, das die App nicht schickt) */
 @Serializable
 data class MagicLinkExchangeResponse(
     val status: String = "pending",
     @SerialName("access_token") val accessToken: String? = null,
     @SerialName("mfa_token") val mfaToken: String? = null,
-    @SerialName("poll_interval_seconds") val pollIntervalSeconds: Int? = null,
 )
 
 @Serializable

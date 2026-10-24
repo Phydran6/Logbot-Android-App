@@ -21,7 +21,6 @@ data class PendingMagicLink(
     val instanceUrl: String,
     val requestId: String,
     val codeVerifier: String,
-    val matchCode: String,
     val email: String,
     val expiresAtMillis: Long,
 ) {
@@ -90,7 +89,6 @@ class CredentialStore @Inject constructor(
                 instanceUrl = prefs.getString(KEY_ML_URL, null) ?: return null,
                 requestId = requestId,
                 codeVerifier = prefs.getString(KEY_ML_VERIFIER, null) ?: return null,
-                matchCode = prefs.getString(KEY_ML_CODE, null).orEmpty(),
                 email = prefs.getString(KEY_ML_EMAIL, null).orEmpty(),
                 expiresAtMillis = prefs.getLong(KEY_ML_EXPIRES, 0L),
             )
@@ -103,7 +101,6 @@ class CredentialStore @Inject constructor(
                 putString(KEY_ML_URL, value.instanceUrl)
                 putString(KEY_ML_REQUEST, value.requestId)
                 putString(KEY_ML_VERIFIER, value.codeVerifier)
-                putString(KEY_ML_CODE, value.matchCode)
                 putString(KEY_ML_EMAIL, value.email)
                 putLong(KEY_ML_EXPIRES, value.expiresAtMillis)
             }
@@ -160,6 +157,7 @@ class CredentialStore @Inject constructor(
         private const val KEY_ML_URL = "ml_url"
         private const val KEY_ML_REQUEST = "ml_request"
         private const val KEY_ML_VERIFIER = "ml_verifier"
+        // Aus der Fassung mit Bestätigung per Code; wird beim Aufräumen mit entfernt.
         private const val KEY_ML_CODE = "ml_code"
         private const val KEY_ML_EMAIL = "ml_email"
         private const val KEY_ML_EXPIRES = "ml_expires"

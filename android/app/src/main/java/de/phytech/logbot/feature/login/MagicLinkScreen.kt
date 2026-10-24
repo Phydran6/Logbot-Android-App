@@ -1,9 +1,7 @@
 /**
- * Anmeldung per E-Mail-Link: Adresse eingeben, Link antippen – fertig.
- *
- * Wird die Mail an einem anderen Gerät gelesen (Rechner), zeigt der Screen
- * einen vierstelligen Code. Den gibt man auf der Seite hinter dem Link ein;
- * die App fragt im Hintergrund nach und ist angemeldet, sobald bestätigt wurde.
+ * Anmeldung per E-Mail-Link: Adresse eingeben, Link in der Mail antippen – die
+ * App öffnet sich und meldet an. Der Link gehört aufs Handy, das ihn angefordert
+ * hat; nur dort liegt das Geheimnis, mit dem er sich einlösen lässt.
  */
 package de.phytech.logbot.feature.login
 
@@ -24,7 +22,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -45,13 +42,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import de.phytech.logbot.core.navigation.LinkInbox
 import kotlinx.coroutines.delay
@@ -153,11 +147,14 @@ private fun Waiting(viewModel: MagicLinkViewModel, step: MagicLinkStep.Waiting) 
         }
     }
     val remaining = ((step.pending.expiresAtMillis - now) / 1000).coerceAtLeast(0)
+    LaunchedEffect(remaining == 0L) {
+        if (remaining == 0L) viewModel.expired()
+    }
 
     Text("Schau in dein Postfach", style = MaterialTheme.typography.headlineSmall)
     Text(
         text = "Falls es zu ${step.pending.email} ein Konto gibt, ist ein Anmelde-Link unterwegs. " +
-            "Öffne ihn auf diesem Handy – die App meldet dich dann an.",
+            "Tippe ihn auf diesem Handy an – die App öffnet sich und meldet dich an.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
         textAlign = TextAlign.Center,
@@ -177,34 +174,9 @@ private fun Waiting(viewModel: MagicLinkViewModel, step: MagicLinkStep.Waiting) 
     ) { Text("Mail-App öffnen") }
 
     Spacer(Modifier.height(20.dp))
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Mail am Rechner geöffnet?", style = MaterialTheme.typography.titleSmall)
-            Text(
-                "Öffne den Link dort und gib diesen Code ein:",
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            Text(
-                text = step.pending.matchCode.chunked(1).joinToString(" "),
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                fontSize = 34.sp,
-                modifier = Modifier.padding(vertical = 8.dp),
-            )
-            Text(
-                "Gib den Code nie an jemand anderen weiter.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-            )
-        }
-    }
-
-    Spacer(Modifier.height(20.dp))
     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
     Text(
-        text = "Warte auf Bestätigung … noch ${remaining / 60}:${"%02d".format(remaining % 60)} min gültig",
+        text = "Der Link ist noch ${remaining / 60}:${"%02d".format(remaining % 60)} min gültig",
         style = MaterialTheme.typography.labelMedium,
         modifier = Modifier.padding(top = 8.dp),
     )

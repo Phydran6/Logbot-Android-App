@@ -10,9 +10,6 @@ import de.phytech.logbot.core.auth.PendingMagicLink
 import de.phytech.logbot.core.navigation.MagicLinkIntent
 import de.phytech.logbot.data.repository.AuthRepository
 import de.phytech.logbot.data.repository.MagicLinkOutcome
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -46,12 +43,6 @@ class MagicLinkViewModel @Inject constructor(
     val suggestedEmail: String = repo.pendingMagicLink?.email
         ?: repo.lastLogin?.takeIf { '@' in it }.orEmpty()
 
-    private var pollJob: Job? = null
-
-    init {
-        (step as? MagicLinkStep.Waiting)?.let { startPolling() }
-    }
-
     fun request(email: String) {
         val address = email.trim()
         if (!EMAIL.matches(address)) {
@@ -65,7 +56,6 @@ class MagicLinkViewModel @Inject constructor(
                 onSuccess = {
                     step = MagicLinkStep.Waiting(it)
                     resendAtMillis = System.currentTimeMillis() + RESEND_AFTER_MS
-                    startPolling()
                 },
                 onFailure = { error = it.message },
             )
@@ -73,58 +63,35 @@ class MagicLinkViewModel @Inject constructor(
         }
     }
 
-    /** Link aus der Mail auf diesem Gerät geöffnet. */
+    /** Link aus der Mail angetippt – die App ist darüber geöffnet worden. */
     fun redeem(link: MagicLinkIntent) {
-        pollJob?.cancel()
         step = MagicLinkStep.Redeeming
         error = null
-        viewModelScope.launch { apply(repo.redeemMagicLink(link.requestId, link.token)) }
+        viewModelScope.launch {
+            when (val outcome = repo.redeemMagicLink(link.requestId, link.token)) {
+                MagicLinkOutcome.Success -> step = MagicLinkStep.Done
+                is MagicLinkOutcome.MfaRequired -> step = MagicLinkStep.Mfa(outcome.mfaToken)
+                is MagicLinkOutcome.Failed -> {
+                    error = outcome.message
+                    // Ist die Anfrage noch offen (z.B. nur kurz kein Netz), einfach den
+                    // Link noch einmal antippen; sonst einen neuen anfordern.
+                    step = repo.pendingMagicLink?.let { MagicLinkStep.Waiting(it) } ?: MagicLinkStep.Enter
+                }
+            }
+        }
     }
 
     fun cancel() {
-        pollJob?.cancel()
         repo.cancelMagicLink()
         step = MagicLinkStep.Enter
         error = null
     }
 
-    /** Nachfragen, ob die Anmeldung auf einem anderen Gerät bestätigt wurde. */
-    private fun startPolling() {
-        pollJob?.cancel()
-        pollJob = viewModelScope.launch {
-            while (isActive) {
-                val pending = (step as? MagicLinkStep.Waiting)?.pending ?: break
-                if (pending.isExpired) {
-                    repo.cancelMagicLink()
-                    error = "Der Link ist abgelaufen. Bitte einen neuen anfordern."
-                    step = MagicLinkStep.Enter
-                    break
-                }
-                when (val outcome = repo.redeemMagicLink()) {
-                    is MagicLinkOutcome.Pending -> delay(outcome.pollSeconds.coerceIn(2, 30) * 1000L)
-                    else -> {
-                        apply(outcome)
-                        break
-                    }
-                }
-            }
-        }
-    }
-
-    private fun apply(outcome: MagicLinkOutcome) {
-        when (outcome) {
-            MagicLinkOutcome.Success -> step = MagicLinkStep.Done
-            is MagicLinkOutcome.MfaRequired -> step = MagicLinkStep.Mfa(outcome.mfaToken)
-            is MagicLinkOutcome.Failed -> {
-                error = outcome.message
-                step = repo.pendingMagicLink?.let { MagicLinkStep.Waiting(it) } ?: MagicLinkStep.Enter
-                if (step is MagicLinkStep.Waiting) startPolling()
-            }
-            is MagicLinkOutcome.Pending -> {
-                step = repo.pendingMagicLink?.let { MagicLinkStep.Waiting(it) } ?: MagicLinkStep.Enter
-                startPolling()
-            }
-        }
+    /** Die Frist ist um: neu anfordern lassen. */
+    fun expired() {
+        repo.cancelMagicLink()
+        error = "Der Link ist abgelaufen. Bitte einen neuen anfordern."
+        step = MagicLinkStep.Enter
     }
 
     private companion object {

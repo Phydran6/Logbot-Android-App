@@ -87,11 +87,12 @@ Vorausgesetzt wird eine laufende
 2. **Anmelde-Link per E-Mail** antippen und die E-Mail-Adresse des Kontos
    eingeben — oder mit Benutzername/E-Mail und Passwort anmelden (mit MFA über
    TOTP oder Backup-Code, falls eingeschaltet)
-3. Den Link aus der Mail auf dem Handy öffnen. Mail am Rechner gelesen? Dort
-   den Code eingeben, den die App anzeigt — die App meldet sich von selbst an
+3. Den Link aus der Mail auf dem Handy antippen — die App öffnet sich und
+   meldet dich an
 
 Alternativ: In der Weboberfläche **App verbinden** öffnen und den QR-Code mit
-der App scannen.
+der App scannen (in der Einrichtung oder auf dem Anmeldebildschirm). Der Code
+gilt 15 Minuten und einmal; jedes erneute Öffnen der Seite ersetzt ihn.
 
 Der E-Mail-Link braucht auf dem Server eingerichteten Mailversand und eine
 E-Mail-Adresse am Konto.

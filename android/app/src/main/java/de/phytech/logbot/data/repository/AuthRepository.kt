@@ -43,12 +43,10 @@ sealed interface LoginOutcome {
 
 /** Stand einer Anmeldung per E-Mail-Link. */
 sealed interface MagicLinkOutcome {
-    /** Noch nicht bestätigt – in [pollSeconds] wieder nachfragen. */
-    data class Pending(val pollSeconds: Int) : MagicLinkOutcome
     data object Success : MagicLinkOutcome
     data class MfaRequired(val mfaToken: String) : MagicLinkOutcome
 
-    /** Abgelaufen, benutzt oder fremd – ein neuer Link muss her. */
+    /** Abgelaufen, benutzt, fremd oder kein Netz – die Meldung sagt, was zu tun ist. */
     data class Failed(val message: String) : MagicLinkOutcome
 }
 
@@ -110,6 +108,7 @@ class AuthRepository @Inject constructor(
 
     suspend fun exchangeAppToken(url: String, token: String): LoginOutcome =
         withContext(Dispatchers.IO) {
+            val previousUrl = credentialStore.instanceUrl
             try {
                 setInstanceUrl(url)
                 val res = api.exchangeAppToken(AppTokenExchangeRequest(token))
@@ -119,9 +118,29 @@ class AuthRepository @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 credentialStore.clearToken()
-                LoginOutcome.Error(mapError(e))
+                // Ein fehlgeschlagener Scan soll die eingestellte Adresse nicht verbiegen.
+                if (previousUrl != null) credentialStore.instanceUrl = previousUrl
+                LoginOutcome.Error(qrError(e, normalizeUrl(url)))
             }
         }
+
+    /**
+     * Ein abgelehnter QR-Code ist kein Passwortfehler: Der Einmal-Code gilt 15
+     * Minuten und einmal, und jedes Öffnen von „App verbinden“ ersetzt ihn.
+     */
+    private fun qrError(e: Exception, url: String): String = when {
+        e is HttpException && e.code() == 401 ->
+            "Dieser QR-Code ist abgelaufen oder schon benutzt. Er gilt 15 Minuten und nur einmal – " +
+                "und jedes erneute Öffnen von „App verbinden“ ersetzt ihn. Bitte die Seite neu laden " +
+                "und den frischen Code gleich scannen."
+        e is HttpException && e.code() == 404 ->
+            "Unter $url antwortet kein Logbot-Server. Stimmt die öffentliche Adresse auf dem Server?"
+        e is IOException ->
+            "Keine Verbindung zu $url – diese Adresse steht im QR-Code. Ist sie vom Handy aus " +
+                "erreichbar? Sonst auf dem Server unter Meldungen → Kanäle → E-Mail die öffentliche " +
+                "Adresse eintragen."
+        else -> mapError(e)
+    }
 
     // --- Anmeldung per E-Mail-Link ----------------------------------------
 
@@ -148,7 +167,6 @@ class AuthRepository @Inject constructor(
                     instanceUrl = url,
                     requestId = res.requestId,
                     codeVerifier = verifier,
-                    matchCode = res.matchCode,
                     email = email.trim(),
                     expiresAtMillis = System.currentTimeMillis() + res.expiresInSeconds * 1000L,
                 )
@@ -162,11 +180,8 @@ class AuthRepository @Inject constructor(
             }
         }
 
-    /**
-     * Löst die laufende Anfrage ein. Mit [linkToken] (Link auf diesem Gerät
-     * geöffnet) sofort, ohne nur nachfragen, ob anderswo bestätigt wurde.
-     */
-    suspend fun redeemMagicLink(requestId: String? = null, linkToken: String? = null): MagicLinkOutcome =
+    /** Löst die laufende Anfrage mit dem Token aus dem angetippten Link ein. */
+    suspend fun redeemMagicLink(requestId: String, linkToken: String): MagicLinkOutcome =
         withContext(Dispatchers.IO) {
             val pending = credentialStore.pendingMagicLink
             if (pending == null || pending.isExpired) {
@@ -176,7 +191,7 @@ class AuthRepository @Inject constructor(
                         "Bitte in der App einen neuen Link anfordern.",
                 )
             }
-            if (requestId != null && requestId != pending.requestId) {
+            if (requestId != pending.requestId) {
                 return@withContext MagicLinkOutcome.Failed(
                     "Das ist ein älterer Link. Bitte den Link aus der neuesten Mail öffnen.",
                 )
@@ -199,7 +214,7 @@ class AuthRepository @Inject constructor(
                         credentialStore.pendingMagicLink = null
                         MagicLinkOutcome.MfaRequired(res.mfaToken.orEmpty())
                     }
-                    else -> MagicLinkOutcome.Pending(res.pollIntervalSeconds ?: 3)
+                    else -> MagicLinkOutcome.Failed("Unerwartete Antwort vom Server")
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -207,8 +222,8 @@ class AuthRepository @Inject constructor(
                 if (e.code() == 410 || e.code() == 401) credentialStore.pendingMagicLink = null
                 MagicLinkOutcome.Failed(mapApiError(e))
             } catch (e: IOException) {
-                // Kurz kein Netz: weiter nachfragen statt aufzugeben.
-                MagicLinkOutcome.Pending(5)
+                // Die Anfrage bleibt offen: Netz prüfen, Link noch einmal antippen.
+                MagicLinkOutcome.Failed("Keine Verbindung zum Server. Netz prüfen und den Link noch einmal antippen.")
             } catch (e: Exception) {
                 MagicLinkOutcome.Failed(mapApiError(e))
             }

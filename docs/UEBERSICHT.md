@@ -26,7 +26,7 @@ Paketstruktur: `core/{network,auth,security,designsystem,navigation,ui}`,
 `data/{api,repository}`, `feature/<screen>`.
 
 ## Funktionen
-- **Auth**: Instanz-URL (wird angepingt), **E-Mail-Link** (PKCE, Code fürs fremde Gerät), Passwort-Login
+- **Auth**: Instanz-URL (wird angepingt), **E-Mail-Link** (PKCE, öffnet die App direkt), Passwort-Login
   (Benutzername oder E-Mail), MFA (TOTP/Backup-Code), QR-App-Login, Passwort vergessen,
   verschlüsselter Token-Speicher, zentrale 401-Abmeldung, **Biometrie-/PIN-Lock** (auch nach Hintergrund).
 - **Übersicht**: Urteil, Geräte, Probleme, Meldungen, Server, KI-Schnellfragen. **Server-Zustand**: Balken, 20-s-Takt.

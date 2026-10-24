@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -51,6 +52,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import de.phytech.logbot.feature.setup.SetupViewModel
+import de.phytech.logbot.feature.setup.rememberQrScanner
 
 @Composable
 fun LoginScreen(
@@ -59,7 +62,12 @@ fun LoginScreen(
     onMagicLink: () -> Unit,
     onChangeServer: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel(),
+    qrViewModel: SetupViewModel = hiltViewModel(),
 ) {
+    val startScan = rememberQrScanner(
+        onResult = { qrViewModel.handleQr(it, onAuthenticated) },
+        onError = qrViewModel::showError,
+    )
     var username by rememberSaveable { mutableStateOf(viewModel.lastLogin) }
     var password by rememberSaveable { mutableStateOf("") }
     var showPassword by rememberSaveable { mutableStateOf(false) }
@@ -102,6 +110,16 @@ fun LoginScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 6.dp),
             )
+            TextButton(onClick = startScan, enabled = !viewModel.loading && !qrViewModel.loading) {
+                Icon(Icons.Filled.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("QR-Code aus der Weboberfläche scannen")
+            }
+            if (qrViewModel.loading) CircularProgressIndicator(Modifier.padding(8.dp))
+            qrViewModel.error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodySmall)
+            }
 
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 20.dp)) {
                 HorizontalDivider(Modifier.weight(1f))

@@ -85,7 +85,7 @@ anhand der Rolle aus `/api/auth/me` aus.
 | Bereich | Inhalt |
 |:--|:--|
 | Setup | Server-Adresse (wird angepingt), QR-App-Login |
-| Login | E-Mail-Link (PKCE, Code für fremdes Gerät), Passwort, MFA (TOTP/Backup-Code), Passwort vergessen |
+| Login | E-Mail-Link (PKCE, öffnet die App direkt), QR-Code, Passwort, MFA (TOTP/Backup-Code), Passwort vergessen |
 | Übersicht | Urteil, Geräte, Probleme heute, offene Meldungen, Server, KI-Schnellfragen |
 | Meldungen | Liste vom Server, gelesen markieren, Benachrichtigungs-Einstellung |
 | KI-Assistent | Chat, optional auf ein Gerät beschränkt, mit Transparenz über gesendete Logzeilen |

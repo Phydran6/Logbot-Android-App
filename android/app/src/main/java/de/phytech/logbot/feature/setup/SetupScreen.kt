@@ -4,10 +4,6 @@
  */
 package de.phytech.logbot.feature.setup
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -33,15 +29,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
 import de.phytech.logbot.core.util.rememberAppVersionName
 
 @Composable
@@ -50,25 +42,13 @@ fun SetupScreen(
     onAuthenticated: () -> Unit,
     viewModel: SetupViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     var url by rememberSaveable { mutableStateOf(viewModel.previousUrl) }
     val version = rememberAppVersionName()
 
-    val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
-        result.contents?.let { viewModel.handleQr(it, onAuthenticated) }
-    }
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        if (granted) scanLauncher.launch(scanOptions())
-        else viewModel.showError("Kamera-Berechtigung wird für den QR-Scan benötigt")
-    }
-    val startScan = {
-        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-            PackageManager.PERMISSION_GRANTED
-        if (granted) scanLauncher.launch(scanOptions())
-        else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-    }
+    val startScan = rememberQrScanner(
+        onResult = { viewModel.handleQr(it, onAuthenticated) },
+        onError = viewModel::showError,
+    )
 
     Scaffold { padding ->
         Column(
@@ -138,11 +118,4 @@ fun SetupScreen(
             )
         }
     }
-}
-
-private fun scanOptions() = ScanOptions().apply {
-    setPrompt("Logbot QR-Code scannen")
-    setBeepEnabled(false)
-    setOrientationLocked(false)
-    setBarcodeImageEnabled(false)
 }

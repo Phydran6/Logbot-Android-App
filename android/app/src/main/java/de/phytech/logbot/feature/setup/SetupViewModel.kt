@@ -79,9 +79,16 @@ class SetupViewModel @Inject constructor(
                 json.getString("url") to json.getString("token")
             }.getOrNull()
 
-            if (parsed == null || !parsed.first.startsWith("https://") || parsed.second.isBlank()) {
+            if (parsed == null || parsed.second.isBlank()) {
                 loading = false
                 error = "Das ist kein Logbot-Anmeldecode. Er steht in der Weboberfläche unter „App verbinden“."
+                return@launch
+            }
+            if (!parsed.first.startsWith("https://")) {
+                loading = false
+                error = "Der QR-Code nennt als Adresse ${parsed.first}. Die App verbindet sich nur über " +
+                    "https – auf dem Server unter Meldungen → Kanäle → E-Mail die öffentliche " +
+                    "https-Adresse eintragen und den Code neu erzeugen."
                 return@launch
             }
 

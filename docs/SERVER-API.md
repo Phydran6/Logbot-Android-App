@@ -20,7 +20,7 @@ Drei Wege führen dorthin:
 
 | Weg | Ablauf |
 |:--|:--|
-| **E-Mail-Link** | App würfelt `code_verifier`, schickt `POST /api/auth/magic-link/request` mit E-Mail und `code_challenge` (S256). Der Server mailt einen Link auf `/api/auth/magic-link/open`, der per `logbot://magic-login?rid=…&t=…` zurück in die App führt. Eingelöst wird mit `POST /api/auth/magic-link/exchange` (Request-ID, Verifier, Token). Am Rechner geöffnet: dort den Code aus der App eingeben, die App fragt mit `exchange` ohne Token nach, bis bestätigt ist. Antwort `status`: `pending`, `ok` (mit `access_token`) oder `mfa_required` (weiter wie beim Passwort) |
+| **E-Mail-Link** | App würfelt `code_verifier`, schickt `POST /api/auth/magic-link/request` mit E-Mail und `code_challenge` (S256). Der Server mailt einen Link auf `/api/auth/magic-link/open`, der per `logbot://magic-login?rid=…&t=…` zurück in die App führt. Auf Android leitet `/open` direkt per `intent://` in die App, ohne Zwischenseite. Eingelöst wird mit `POST /api/auth/magic-link/exchange` (Request-ID, Verifier, Token). Antwort `status`: `ok` (mit `access_token`) oder `mfa_required` (weiter wie beim Passwort). Eine Anmeldung im Browser gibt es nicht |
 | **Passwort** | `POST /api/auth/login` – Benutzername **oder** E-Mail; verlangt der Server MFA, antwortet er mit einem `mfa_token`, den `POST /api/auth/login/mfa` gegen TOTP oder Backup-Code einlöst. `POST /api/auth/password/forgot` schickt einen Link zum Zurücksetzen |
 | **QR-Code** | Die Weboberfläche zeigt unter *App verbinden* einen kurzlebigen Token. `POST /api/auth/app-token/exchange` tauscht ihn gegen einen Access-Token |
 
