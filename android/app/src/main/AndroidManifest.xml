@@ -3,6 +3,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Meldungen bei kritischen Fehlern (ab Android 13 vom Nutzer zu erlauben) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Kamera ist optional – QR-Scan wird nur angeboten wenn Kamera vorhanden -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -16,18 +18,42 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="false"
         android:theme="@style/Theme.Logbot">
 
-        <!-- Single-Activity Compose-Host -->
+        <!-- Single-Activity Compose-Host. singleTop: Ein Anmelde-Link oder das
+             Antippen einer Meldung landet per onNewIntent in der laufenden App,
+             statt eine zweite Instanz zu starten. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Anmelde-Link aus der Mail: logbot://magic-login?rid=…&t=…
+                 Allein nutzlos – eingelöst wird er nur zusammen mit dem
+                 Geheimnis, das beim Anfordern auf diesem Gerät entstand. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="logbot" android:host="magic-login" />
+            </intent-filter>
         </activity>
+
+        <!-- Push über UnifiedPush (Verteiler-App z.B. ntfy). Nicht exportiert:
+             der Connector stellt die Ereignisse selbst zu. -->
+        <service
+            android:name=".core.notifications.LogbotPushService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
+            </intent-filter>
+        </service>
 
     </application>
 

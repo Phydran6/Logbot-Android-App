@@ -7,6 +7,10 @@ import retrofit2.http.GET
 
 interface MonitoringApi {
 
+    /** Öffentlich, ohne Anmeldung: läuft hier ein Logbot-Server? */
+    @GET("api/health")
+    suspend fun health(): HealthDto
+
     @GET("api/health/detailed")
     suspend fun healthDetailed(): HealthDetailedDto
 

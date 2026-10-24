@@ -12,27 +12,28 @@ Was die App schützt, was nicht — und was offen ist.
 
 | | |
 |:--|:--|
-| **Zugangsdaten** | Android: `EncryptedSharedPreferences`, AES-256-GCM, Schlüssel im Android Keystore. iOS: Schlüsselbund mit `WhenUnlockedThisDeviceOnly` — die Werte wandern nicht per iCloud auf andere Geräte |
-| **Nur https** | Die Einrichtung lehnt `http://` ab. Die eingebettete Weboberfläche läuft mit `MIXED_CONTENT_NEVER_ALLOW`, iOS mit `NSAllowsArbitraryLoads = false` |
-| **App-Sperre** | Optional: Fingerabdruck, Gesicht oder Gerätecode beim Start. Bei Abbruch schließt die App, **ohne** dass ein Token entschlüsselt wurde |
-| **Navigationsgrenze** | Die `WebView` folgt nur der eingerichteten Instanz und ihren Unterdomänen. Alles andere geht in den Systembrowser |
-| **Kein Dateizugriff** | `allowFileAccess`, `allowContentAccess` und beide `…FromFileURLs` stehen auf `false` |
-| **Token-Injektion** | Der Token wird per `JSONObject.quote()` bzw. `JSONSerialization` maskiert, bevor er in JavaScript landet |
-| **Abgelaufene Sitzung** | Eine 401 auf dem Hauptrahmen löscht die Zugangsdaten und führt zurück in die Einrichtung |
-| **Keine Telemetrie** | Keine Analytik, keine Werbe-IDs, keine Absturzberichte an Dritte. Die App spricht ausschließlich mit der eingetragenen Instanz |
+| **Zugangsdaten** | Android: `EncryptedSharedPreferences`, AES-256-GCM, Schlüssel im Android Keystore, vom Backup ausgeschlossen. Lässt sich der Speicher nicht mehr entschlüsseln (z.B. nach einer Wiederherstellung), legt die App ihn neu an, statt abzustürzen. iOS: Schlüsselbund mit `WhenUnlockedThisDeviceOnly` |
+| **Nur https** | Die Einrichtung lehnt `http://` ab, das Manifest verbietet unverschlüsselten Verkehr (`usesCleartextTraffic=false`) |
+| **Anmelde-Link per Mail** | Der Link allein meldet niemanden an: Eingelöst wird er nur zusammen mit einem Geheimnis (PKCE-`code_verifier`), das beim Anfordern auf dem Handy entsteht und das Gerät erst beim Einlösen verlässt. Der Server speichert vom Link nur einen Abdruck, er gilt 15 Minuten und einmal. Am Rechner geöffnet, muss ein Code eingegeben werden, den nur die anfordernde App zeigt – er steht nicht in der Mail. Ein Aufruf des Links durch Mailprogramme oder Virenscanner löst nichts aus. Ist MFA eingeschaltet, folgt der zweite Faktor wie beim Passwort |
+| **App-Sperre** | Optional: Fingerabdruck, Gesicht oder Gerätecode beim Start und nach mehr als einer Minute im Hintergrund. Bei Abbruch schließt die App, ohne dass ein Token entschlüsselt wurde |
+| **Abgelaufene Sitzung** | Jede Anfrage, die der Server mit 401 ablehnt, verwirft den Token und führt zur Anmeldung |
+| **Benachrichtigungen** | Der Server schickt per Push nur ID, Schweregrad und Titel, nach RFC 8291 verschlüsselt – der Push-Dienst (z.B. ntfy) sieht keinen Inhalt. Unverschlüsselte Push-Nachrichten zeigt die App nicht an, sondern fragt beim eigenen Server nach. Auf dem Sperrbildschirm steht nur „Logbot: Kritisch“, nicht der Inhalt |
+| **KI** | Die App schickt nur die Frage; welche Logzeilen an die KI gehen, entscheidet der Server, gedeckelt durch die dort eingestellte Höchstzahl. Unter jeder Antwort steht, wie viele Zeilen von welchen Geräten gesendet wurden. Ist die KI auf dem Server aus, verlässt nichts den Server |
+| **Kein Protokoll im Release** | Das Netzwerkprotokoll läuft nur im Debug-Build, der `Authorization`-Kopf ist auch dort geschwärzt |
+| **Keine Telemetrie** | Keine Analytik, keine Werbe-IDs, keine Absturzberichte an Dritte. Die App spricht mit der eingetragenen Instanz – und, nur wenn Push eingeschaltet ist, über die gewählte Verteiler-App |
 
 ---
 
 ## Was die App bewusst nicht tut
 
-**Schreiben.** Außer dem Passwort-Reset löst die App keine Änderung am Server
-aus. Benutzer anlegen, Aufbewahrung einstellen, Updates auslösen, neu starten
-— das bleibt der Weboberfläche vorbehalten. Ein Fehlgriff auf einem Telefon
-ist zu leicht passiert.
+**Den Server umbauen.** Neustart, Updates, Netzwerk, Aufbewahrung ausführen,
+KI-, Mail-, LDAP- oder Archiv-Anbindung einrichten — das bleibt der
+Weboberfläche vorbehalten. Ein Fehlgriff auf einem Telefon ist zu leicht
+passiert. In den Einstellungen lassen sich nur einfache Werte ändern, und nur
+von Administratoren.
 
-**Passwörter kennen.** Die App bekommt nie ein Passwort zu sehen. Der
-App-Token entsteht nur aus einer bereits angemeldeten Web-Sitzung — auch dann,
-wenn der Server MFA verlangt.
+**Rechte vortäuschen.** Was nur Administratoren dürfen, blendet die App aus –
+geprüft wird es trotzdem auf dem Server.
 
 ---
 
@@ -87,6 +88,8 @@ zur Laufzeit aus Secrets.
 |:--|:--|:--|
 | Android | `INTERNET` | Zugriff auf die eigene Instanz |
 | Android | `CAMERA` (optional) | QR-Code bei der Einrichtung |
+| Android | `POST_NOTIFICATIONS` (optional) | Benachrichtigungen bei Meldungen, wird erst beim Einschalten erfragt |
+| Android | `WAKE_LOCK` (über UnifiedPush) | Push zustellen, während das Gerät schläft |
 | iOS | Face ID | App-Sperre |
 
 Mehr fragt die App nicht an.

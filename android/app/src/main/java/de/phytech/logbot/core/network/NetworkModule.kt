@@ -11,10 +11,12 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import de.phytech.logbot.BuildConfig
 import de.phytech.logbot.data.api.AgentsApi
+import de.phytech.logbot.data.api.AiApi
 import de.phytech.logbot.data.api.AuthApi
 import de.phytech.logbot.data.api.BrandingApi
-import de.phytech.logbot.data.api.LogsApi
+import de.phytech.logbot.data.api.MobileApi
 import de.phytech.logbot.data.api.MonitoringApi
 import de.phytech.logbot.data.api.SettingsApi
 import de.phytech.logbot.data.api.UsersApi
@@ -25,6 +27,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -37,6 +40,8 @@ object NetworkModule {
         ignoreUnknownKeys = true
         isLenient = true
         explicitNulls = false
+        // null vom Server für ein Feld mit Vorgabe -> Vorgabe statt Absturz
+        coerceInputValues = true
     }
 
     @Provides
@@ -44,16 +49,26 @@ object NetworkModule {
     fun provideOkHttpClient(
         hostSelection: HostSelectionInterceptor,
         auth: AuthInterceptor,
+        timeouts: TimeoutInterceptor,
     ): OkHttpClient {
-        val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
-            redactHeader("Authorization")
-        }
-        return OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .addInterceptor(hostSelection)
             .addInterceptor(auth)
-            .addInterceptor(logging)
-            .build()
+            .addInterceptor(timeouts)
+        // Protokoll nur im Debug-Build: Adressen tragen Suchbegriffe und
+        // Hostnamen, und Logcat ist auf manchen Geräten für Dritte lesbar.
+        if (BuildConfig.DEBUG) {
+            builder.addInterceptor(
+                HttpLoggingInterceptor().apply {
+                    level = HttpLoggingInterceptor.Level.BASIC
+                    redactHeader("Authorization")
+                },
+            )
+        }
+        return builder.build()
     }
 
     @Provides
@@ -76,7 +91,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideLogsApi(retrofit: Retrofit): LogsApi = retrofit.create(LogsApi::class.java)
+    fun provideMobileApi(retrofit: Retrofit): MobileApi = retrofit.create(MobileApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAiApi(retrofit: Retrofit): AiApi = retrofit.create(AiApi::class.java)
 
     @Provides
     @Singleton

@@ -25,6 +25,8 @@ class UsersViewModel @Inject constructor(
         private set
     var working by mutableStateOf(false)
         private set
+    var info by mutableStateOf<String?>(null)
+        private set
 
     init {
         refresh()
@@ -43,7 +45,10 @@ class UsersViewModel @Inject constructor(
 
     fun delete(id: Int) = execute({}) { repo.delete(id) }
 
-    fun resetMfa(id: Int, onDone: () -> Unit) = execute(onDone) { repo.resetMfa(id) }
+    fun resetMfa(id: Int, onDone: () -> Unit) = execute({
+        onDone()
+        info = "Zwei-Faktor wurde zurückgesetzt."
+    }) { repo.resetMfa(id) }
 
     private fun execute(onDone: () -> Unit, block: suspend () -> UiState<Unit>) {
         working = true
@@ -61,6 +66,10 @@ class UsersViewModel @Inject constructor(
                 else -> working = false
             }
         }
+    }
+
+    fun dismissInfo() {
+        info = null
     }
 
     fun dismissActionError() {

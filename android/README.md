@@ -38,6 +38,7 @@ de.phytech.logbot
 ├── core/
 │   ├── network/        Retrofit, OkHttp, Interceptors, NetworkModule
 │   ├── auth/           CredentialStore (verschlüsselt), Session
+│   ├── notifications/  Kanäle, Push (UnifiedPush), Hintergrundabfrage
 │   ├── security/       Biometrie-/PIN-Lock
 │   ├── designsystem/   Material-3-Theme, Farben, Typografie
 │   ├── navigation/     Destinations, NavHost-Verdrahtung
@@ -50,7 +51,8 @@ de.phytech.logbot
     ├── setup/  login/  lock/        Einrichtung, Login+MFA, App-Sperre
     ├── shell/                       Drawer = Server-Sidebar
     ├── dashboard/  health/  logs/   Lesen
-    ├── agents/  users/  webhooks/   Verwalten
+    ├── chat/  notifications/        KI-Assistent, Meldungen
+    ├── agents/  users/  webhooks/   Geräte, Verwalten
     ├── settings/  branding/
     └── common/
 ```
@@ -82,19 +84,35 @@ anhand der Rolle aus `/api/auth/me` aus.
 
 | Bereich | Inhalt |
 |:--|:--|
-| Setup | Instanz-URL, QR-App-Login (Token-Exchange) |
-| Login | Passwort, MFA über TOTP oder Backup-Code |
-| Dashboard | Log-Statistiken |
-| Health | Prozessor, Arbeitsspeicher, Platte, Laufzeit, Datenbank |
-| Logs | Liste, Filter (Suche/Level/Host/Quelle), Detail, Mehr laden |
-| Agents | Liste, Löschen |
-| Users | Anlegen/Ändern/Löschen, MFA zurücksetzen (Admin) |
-| Webhooks | Anlegen/Ändern/Löschen, Aufruf-URL kopieren, Token neu |
-| Settings | Werte bearbeiten, Datenbank-Infos |
-| Branding | Whitelabel-Einstellungen |
+| Setup | Server-Adresse (wird angepingt), QR-App-Login |
+| Login | E-Mail-Link (PKCE, Code für fremdes Gerät), Passwort, MFA (TOTP/Backup-Code), Passwort vergessen |
+| Übersicht | Urteil, Geräte, Probleme heute, offene Meldungen, Server, KI-Schnellfragen |
+| Meldungen | Liste vom Server, gelesen markieren, Benachrichtigungs-Einstellung |
+| KI-Assistent | Chat, optional auf ein Gerät beschränkt, mit Transparenz über gesendete Logzeilen |
+| Logs | Cursor-Paging (`/api/app/logs`), Filter-Chips, Suche, Detailblatt |
+| Geräte | Online-Zustand, Suche, Aktionen (Logs, KI, entfernen) |
+| Server-Zustand | CPU/RAM/Platte als Balken, Datenbank, Laufzeit; 20-s-Takt |
+| Benutzer | Anlegen/Ändern/Löschen, MFA zurücksetzen (Admin) |
+| Webhooks | Anlegen/Ändern/Löschen, Aufruf-URL kopieren, Token neu (Admin) |
+| Einstellungen | App-Sperre, Benachrichtigungen, Server; einfache Server-Werte (Admin) |
+| Branding | Whitelabel-Einstellungen (Admin) |
 
-Dazu quer über alles: verschlüsselter Token-Speicher, Biometrie-/PIN-Sperre,
-Abmeldung bei HTTP 401.
+Dazu quer über alles: verschlüsselter Token-Speicher, Biometrie-/PIN-Sperre
+(auch nach einer Minute im Hintergrund), zentrale Abmeldung bei HTTP 401
+(`SessionManager`), Deep Link `logbot://magic-login` (`LinkInbox`).
+
+### Benachrichtigungen
+
+`core/notifications/`: `Notifier` (drei Kanäle), `LogbotPushService`
+(UnifiedPush-Connector 3.x, Nachrichten nach RFC 8291 entschlüsselt),
+`PushManager` (Verteiler wählen, registrieren), `NotificationCheckWorker`
+(WorkManager, alle 15 Minuten – auch als Rückfall, wenn Push ausfällt) und
+`PushRegisterWorker` (Endpunkt beim Server anmelden, mit Wiederholung).
+Doppelte Benachrichtigungen verhindert die zuletzt gemeldete ID.
+
+**Tink:** `security-crypto` bringt `tink-android` mit, der UnifiedPush-Connector
+das reine `tink` – beide enthalten dieselben Klassen. Deshalb ist `tink` beim
+Connector ausgeschlossen und `tink-android` in aktueller Fassung eingebunden.
 
 ---
 
@@ -139,3 +157,5 @@ niemand.
 |:--|:--|:--|
 | `INTERNET` | Zugriff auf die eigene Instanz | ja |
 | `CAMERA` | QR-Code bei der Einrichtung | nein |
+| `POST_NOTIFICATIONS` | Benachrichtigungen (ab Android 13 erfragt) | nein |
+| `WAKE_LOCK` | Push-Zustellung (kommt vom UnifiedPush-Connector) | nein |

@@ -19,15 +19,36 @@ class HealthViewModel @Inject constructor(
 
     var state by mutableStateOf<UiState<HealthDetailedDto>>(UiState.Loading)
         private set
+    var refreshing by mutableStateOf(false)
+        private set
 
     init {
-        refresh()
+        load()
     }
 
     fun refresh() {
+        refreshing = true
+        load()
+    }
+
+    fun retry() {
         state = UiState.Loading
+        load()
+    }
+
+    /** Leise nachladen (Takt im Screen) – ohne Ladeanzeige, Fehler lassen den alten Stand stehen. */
+    fun poll() {
         viewModelScope.launch {
-            state = repo.health()
+            val r = repo.health()
+            if (r is UiState.Success) state = r
+        }
+    }
+
+    private fun load() {
+        viewModelScope.launch {
+            val r = repo.health()
+            if (r is UiState.Success || state !is UiState.Success) state = r
+            refreshing = false
         }
     }
 }

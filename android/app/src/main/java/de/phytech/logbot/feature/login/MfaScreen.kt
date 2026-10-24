@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -27,6 +28,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,6 +43,7 @@ fun MfaScreen(
     viewModel: MfaViewModel = hiltViewModel(),
 ) {
     var code by rememberSaveable { mutableStateOf("") }
+    var backupCode by rememberSaveable { mutableStateOf(false) }
 
     Scaffold { padding ->
         Column(
@@ -62,12 +66,22 @@ fun MfaScreen(
 
             OutlinedTextField(
                 value = code,
-                onValueChange = { code = it },
-                label = { Text("Code") },
+                onValueChange = { code = it.take(24) },
+                label = { Text(if (backupCode) "Backup-Code" else "6-stelliger Code") },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                // Backup-Codes sind hexadezimal (0-9, A-F) – mit der reinen
+                // Zifferntastatur ließen sie sich nicht eingeben.
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (backupCode) KeyboardType.Ascii else KeyboardType.NumberPassword,
+                    capitalization = KeyboardCapitalization.Characters,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = { viewModel.verify(mfaToken, code, onAuthenticated) }),
                 modifier = Modifier.fillMaxWidth(),
             )
+            TextButton(onClick = { backupCode = !backupCode; code = "" }) {
+                Text(if (backupCode) "Code aus der Authenticator-App eingeben" else "Backup-Code verwenden")
+            }
 
             Spacer(Modifier.height(20.dp))
             Button(
