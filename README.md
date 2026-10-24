@@ -37,24 +37,35 @@ selbst ab.
 
 ## Was sie kann
 
-Die App bildet die Oberfläche des Servers nativ nach — dieselbe Seitenleiste,
-dieselben Bereiche, nur für den Daumen gebaut statt für die Maus.
+**Übersicht** — ein Satz, ob alles läuft („Alles in Ordnung“ / „2 Geräte
+melden sich nicht“), dazu Geräte online, Probleme heute, offene Meldungen,
+Zustand des Servers und Schnellfragen an die KI.
 
-**Dashboard und Health** — Log-Statistiken auf einen Blick, dazu Prozessor,
-Arbeitsspeicher, Platte, Laufzeit und Datenbank-Zustand.
+**KI-Assistent** — Fragen in Alltagssprache: „Ist im WLAN alles gut?“,
+„Welche Geräte sind offline und warum?“. Der Server sieht selbst in den Logs
+nach und antwortet mit Belegen — auf Wunsch nur für ein Gerät. Unter jeder
+Antwort steht, wie viele Logzeilen dafür an die KI gingen. Angebunden wird
+die KI auf dem Server: Claude, ChatGPT, OpenRouter, eine eigene KI über
+Open WebUI oder ein n8n-Workflow.
 
-**Logs** — Liste mit Filtern nach Suchbegriff, Level, Host und Quelle,
-Detailansicht und Nachladen. Die Einträge sind auf einem Telefon lesbar, nicht
-eine Tabelle mit acht Spalten.
+**Meldungen und Push** — was der Server als „ansehen“ einstuft, landet in
+den Meldungen und auf Wunsch als Benachrichtigung auf dem Handy: sofort per
+Push über [UnifiedPush](https://unifiedpush.org) (z.B. mit der ntfy-App, ganz
+ohne Google-Dienste) oder ohne Einrichtung alle 15 Minuten.
 
-**Agents, Users, Webhooks** — Geräte einsehen und löschen, Benutzer anlegen,
-ändern, löschen und MFA zurücksetzen, Webhooks samt Aufruf-URL und Token
-verwalten. Was nur Administratoren dürfen, blendet die App anhand der Rolle aus.
+**Logs** — lesbare Liste mit Endlos-Scrollen, Filter nach Schweregrad, Gerät,
+Zeitraum und Suchbegriff, Detailblatt mit zerlegten Feldern, Rohzeile und
+„KI fragen“.
 
-**Settings und Branding** — Server-Einstellungen bearbeiten, Datenbank-Infos
-einsehen, Whitelabel-Einstellungen pflegen.
+**Geräte** — alles, was Logs liefert, mit Online-Zustand; je Gerät dessen Logs,
+die KI-Frage „Ist alles in Ordnung?“ und — für Administratoren — Entfernen.
 
-Überall Lade-, Fehler- und Leer-Zustände mit einem Knopf zum Wiederholen.
+**Verwaltung** — Benutzer, Webhooks, Branding und die einfachen
+Server-Einstellungen für Administratoren. Was nur Administratoren dürfen,
+blendet die App anhand der Rolle aus.
+
+Überall Lade-, Fehler- und Leer-Zustände, Ziehen zum Aktualisieren, und
+Fehlermeldungen im Wortlaut des Servers.
 
 ## Wie sie sich anfühlt
 
@@ -63,6 +74,7 @@ einsehen, Whitelabel-Einstellungen pflegen.
 | **Nativ, nicht eingebettet** | Kein WebView mehr. Die Daten kommen über die REST-API |
 | **Seitenleiste wie am Server** | Wer die Weboberfläche kennt, findet sich sofort zurecht |
 | **Sicher verwahrt** | Token verschlüsselt auf dem Gerät, optionale Sperre per Fingerabdruck, Gesicht oder Code |
+| **Ohne Google** | Push über UnifiedPush, Inhalt Ende-zu-Ende verschlüsselt; keine Telemetrie |
 | **Hell und dunkel** | Material 3, folgt dem Gerät |
 
 ## Einrichten
@@ -71,22 +83,28 @@ Vorausgesetzt wird eine laufende
 [Logbot-Server](https://github.com/Phydran6/Logbot-Server)-Instanz über
 **https**.
 
-1. In der Weboberfläche des Servers anmelden
-2. Dort **App verbinden** öffnen — der Server zeigt einen QR-Code
-3. In der App **QR-Code scannen** antippen (Android) oder den QR-Inhalt
-   einfügen (iOS)
+1. App öffnen, die Adresse des Servers eintragen (`https://` darf fehlen)
+2. **Anmelde-Link per E-Mail** antippen und die E-Mail-Adresse des Kontos
+   eingeben — oder mit Benutzername/E-Mail und Passwort anmelden (mit MFA über
+   TOTP oder Backup-Code, falls eingeschaltet)
+3. Den Link aus der Mail auf dem Handy öffnen. Mail am Rechner gelesen? Dort
+   den Code eingeben, den die App anzeigt — die App meldet sich von selbst an
 
-Alternativ geht die Anmeldung direkt in der App: Instanz-URL eintragen, dann
-Benutzername und Passwort — mit MFA über TOTP oder Backup-Code, falls der
-Server das verlangt.
+Alternativ: In der Weboberfläche **App verbinden** öffnen und den QR-Code mit
+der App scannen.
+
+Der E-Mail-Link braucht auf dem Server eingerichteten Mailversand und eine
+E-Mail-Adresse am Konto.
 
 Instanz-URL und Token liegen danach verschlüsselt auf dem Gerät: unter Android
 in `EncryptedSharedPreferences` mit Schlüssel im Android Keystore, unter iOS im
 Schlüsselbund, gebunden an genau dieses Gerät.
 
-Wer mag, schaltet dabei die **App-Sperre** ein. Dann fragt das Gerät beim Start
-nach Fingerabdruck, Gesicht oder Code, bevor überhaupt ein Token entschlüsselt
-wird.
+In den Einstellungen der App lassen sich die **App-Sperre** (Fingerabdruck,
+Gesicht oder Code beim Öffnen) und die **Benachrichtigungen** einschalten. Für
+Sofort-Push eine UnifiedPush-Verteiler-App wie
+[ntfy](https://play.google.com/store/apps/details?id=io.heckel.ntfy)
+installieren; ohne sie sieht die App alle 15 Minuten nach.
 
 ## Herunterladen
 

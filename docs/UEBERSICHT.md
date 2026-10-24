@@ -26,14 +26,15 @@ Paketstruktur: `core/{network,auth,security,designsystem,navigation,ui}`,
 `data/{api,repository}`, `feature/<screen>`.
 
 ## Funktionen
-- **Auth**: Instanz-URL, Passwort-Login, MFA (TOTP/Backup-Code), QR-App-Login (Token-Exchange),
-  verschlüsselter Token-Speicher, 401→Logout, **Biometrie-/PIN-Lock**.
-- **Dashboard**: Log-Statistiken. **Health**: CPU/RAM/Disk/Uptime/DB.
-- **Logs**: Liste + Filter (Suche/Level/Host/Source) + Detail + „Mehr laden".
-- **Agents**: Liste + Löschen. **Users**: CRUD + MFA-Reset (Admin).
-- **Webhooks**: CRUD + Aufruf-URL (kopierbar) + Token neu.
-- **Settings**: Werte editieren + DB-Infos. **Branding**: Whitelabel bearbeiten.
-- Überall Lade-/Fehler-/Leer-Zustände mit Retry.
+- **Auth**: Instanz-URL (wird angepingt), **E-Mail-Link** (PKCE, Code fürs fremde Gerät), Passwort-Login
+  (Benutzername oder E-Mail), MFA (TOTP/Backup-Code), QR-App-Login, Passwort vergessen,
+  verschlüsselter Token-Speicher, zentrale 401-Abmeldung, **Biometrie-/PIN-Lock** (auch nach Hintergrund).
+- **Übersicht**: Urteil, Geräte, Probleme, Meldungen, Server, KI-Schnellfragen. **Server-Zustand**: Balken, 20-s-Takt.
+- **KI-Assistent**: Chat über `POST /api/ai/chat`, der Server prüft selbst die Logs; optional je Gerät.
+- **Meldungen**: Liste + gelesen; Benachrichtigungen per UnifiedPush oder WorkManager-Abfrage (15 min).
+- **Logs**: Cursor-Paging über `/api/app/logs`, Filter-Chips, Suche, Detailblatt, „KI fragen“.
+- **Geräte**: Online-Zustand, Suche, Logs/KI/Entfernen. **Benutzer**, **Webhooks**, **Branding**: Admin.
+- **Einstellungen**: App (Sperre, Benachrichtigungen, Server) + einfache Server-Werte (Admin).
 
 ## Versionierung
 Automatisch, kein manuelles Bumpen:
@@ -49,7 +50,7 @@ Automatisch, kein manuelles Bumpen:
 - APK-Name: `Logbot-<version>.apk`. Download über die Releases-Seite.
 - **Diagnose**: Bei Build-Fehler postet die CI die Gradle-Fehlerursache als Commit-Kommentar
   (lesbar über die öffentliche API).
-- Lokal nicht baubar in der Entwicklungsumgebung (Java 8, kein SDK) → Verifikation läuft über CI.
+- Lokal baubar mit JDK 17+ und Android-SDK (Plattform 36); verbindlich ist die CI.
 
 ## Wichtige Stolpersteine (gelöst)
 - **AGP 9 = Built-in-Kotlin**: KEIN `org.jetbrains.kotlin.android`-Plugin anwenden.
@@ -63,6 +64,5 @@ Automatisch, kein manuelles Bumpen:
 - Rewrite auf Branch **`native-rewrite`**; **`main`** = letzter funktionierender WebView-Stand.
 - Details: [ARCHITEKTUR.md](ARCHITEKTUR.md) · [ROADMAP.md](ROADMAP.md) · [CHANGELOG](CHANGELOG.md).
 
-## Offen (optionale Kür)
-Offline-Caching, Pull-to-refresh, Certificate-Pinning, Agent-Retention-UI,
-Branding-Logo-Upload, Settings-Retention-Aktionen, Logs-Endlos-Scroll.
+## Offen
+Siehe [ROADMAP.md](ROADMAP.md#offen).

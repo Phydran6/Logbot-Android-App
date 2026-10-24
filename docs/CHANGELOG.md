@@ -10,7 +10,39 @@ gewechselt wurde, steht in [RELEASE.md](RELEASE.md#versionsnummern).
 
 ## [Unreleased]
 
+### Hinzugefügt
+- **Anmeldung per E-Mail-Link.** Adresse eingeben, Link in der Mail antippen, angemeldet – ohne Passwort. Die App würfelt dabei ein Geheimnis (PKCE) und schickt dem Server nur dessen Abdruck; wer die Mail abfängt, kann den Link nicht einlösen. Wird die Mail am Rechner geöffnet, bestätigt man dort mit einem vierstelligen Code, den die App anzeigt, und die App meldet sich von selbst an. MFA bleibt Pflicht, wenn sie für das Konto eingeschaltet ist. Die laufende Anfrage überlebt, dass Android die App beim Wechsel in die Mail-App beendet. Braucht den Server-Endpunkt `/api/auth/magic-link/*`.
+- **KI-Assistent.** Fragen in Alltagssprache („Ist im WLAN alles gut?“, „Welche Geräte sind offline und warum?“) – der Server sieht mit Werkzeugen selbst in den Logs nach und antwortet mit Belegen. Wahlweise auf ein Gerät beschränkt. Unter jeder Antwort steht, wie viele Logzeilen von welchen Geräten an die KI gingen. Erreichbar über das Menü, Schnellfragen in der Übersicht, „KI fragen“ an jeder Logzeile, jedem Gerät und jeder Meldung. Braucht `POST /api/ai/chat`.
+- **Meldungen und Benachrichtigungen.** Eigener Bereich mit den Meldungen des Servers (ungelesen-Zähler im Menü). Auf Wunsch Benachrichtigungen aufs Handy: sofort per Push über UnifiedPush (z.B. mit der ntfy-App, ohne Google-Dienste, Inhalt nach RFC 8291 verschlüsselt) oder ohne jede Einrichtung per Abfrage alle 15 Minuten. Schwelle wählbar (nur Kritisches / Fehler / auch Warnungen), drei Android-Kanäle, Inhalt nicht auf dem Sperrbildschirm.
+- **Übersicht** statt reiner Statistik: ein Urteil in einem Satz („Alles in Ordnung“ / „2 Geräte melden sich nicht“), Geräte online, Probleme heute, offene Meldungen, Serverzustand, Schnellfragen an die KI.
+- **Passwort vergessen** auf dem Anmeldebildschirm; Anmeldung mit Benutzername **oder** E-Mail.
+- Ziehen zum Aktualisieren in Übersicht, Logs, Geräten, Meldungen und Server-Zustand; der Server-Zustand aktualisiert sich alle 20 Sekunden, solange er offen ist.
+
 ### Geändert
+- **Logs** laufen über die App-Schnittstelle `/api/app/logs`: Blättern per Cursor statt Seitenzahl (keine doppelten oder übersprungenen Zeilen mehr, während neue eintreffen), Endlos-Scrollen, lesbare Zusammenfassung statt Rohzeile, Filter als Chips (Schweregrad, Gerät, Zeitraum), Suche mit Verzögerung statt Knopf, Detailblatt mit zerlegten Feldern, Rohzeile zum Kopieren und „KI fragen“.
+- **Agents heißen jetzt Geräte**: Suche, Filter „offline“, „zuletzt gesehen“ in Worten, Aktionen je Gerät (Logs, KI fragen, entfernen – Letzteres nur für Administratoren, wahlweise samt Logs).
+- **Einstellungen** zeigen nur noch die bekannten einfachen Werte mit Beschriftung, Einheit und passender Eingabe; Nicht-Administratoren sehen sie nur. Dazu ein Abschnitt für das Handy selbst (App-Sperre, Benachrichtigungen, Server, Abmelden).
+- **App-Sperre** greift jetzt auch nach mehr als einer Minute im Hintergrund, nicht nur beim Kaltstart. Ein Fehler beim Entsperren (z.B. zu viele Versuche) schließt die App nicht mehr, sondern lässt den Sperrbildschirm stehen.
+- **Abmelden** behält die Server-Adresse; „Server wechseln“ ist ein eigener Schritt. Beim Abmelden wird der Push-Endpunkt beim Server abgemeldet.
+- Die Einrichtung prüft, ob unter der Adresse wirklich ein Logbot-Server antwortet, und nimmt die Adresse auch ohne `https://` an.
+- Fehlermeldungen kommen, wo möglich, vom Server („Die KI-Auswertung ist nicht eingerichtet …“) statt „Serverfehler (409)“.
+- Webhooks und Benutzer stehen nur noch Administratoren im Menü – Nicht-Administratoren konnten dort ohnehin nichts tun.
+
+### Behoben
+- **Abgelaufene Sitzung**: Nur der Drawer-Start erkannte HTTP 401. Jeder andere Screen zeigte „Sitzung abgelaufen“ mit einem Wiederholen-Knopf, der nie helfen konnte. Jetzt meldet jede abgelehnte Anfrage das an eine zentrale Stelle, und die App kehrt zur Anmeldung zurück.
+- **Backup-Codes ließen sich nicht eingeben**: Sie sind hexadezimal (0–9, A–F), das MFA-Feld bot aber nur die Zifferntastatur. Jetzt gibt es einen Umschalter „Backup-Code verwenden“.
+- **Einstellungen konnten Server-Konfiguration zerstören**: Der Bearbeiten-Dialog schrieb jeden Wert als einfachen Text zurück – auch verschachtelte wie `ai_config` oder `mail_config`. Ein Tippen auf „Speichern“ hätte die KI- oder Mail-Anbindung samt Schlüssel überschrieben.
+- Das Datenbank-Passwort des Servers stand im Klartext in den Einstellungen. Es wird nicht mehr angezeigt.
+- Läuft der Server unter einem Unterpfad (`https://host/logbot`), ging der Pfad verloren und jede Anfrage lief ins Leere.
+- Das Netzwerkprotokoll lief auch im Release-Build (Adressen mit Suchbegriffen und Hostnamen in Logcat) – jetzt nur noch im Debug-Build.
+- Lassen sich die verschlüsselten Zugangsdaten nicht mehr lesen (z.B. nach einer Geräte-Wiederherstellung), stürzte die App bei jedem Start ab. Sie legt den Speicher jetzt neu an; man meldet sich einmal neu an.
+- Zeitstempel wurden als UTC-Text angezeigt; jetzt in der Zeitzone des Geräts, in Listen kurz und relativ („vor 5 min“).
+- Benutzer anlegen prüft E-Mail und Passwortlänge, bevor die Anfrage rausgeht; „MFA zurücksetzen“ fragt nach und bestätigt.
+
+### Server
+- Die zugehörigen Server-Änderungen liegen im Repository Logbot-Server: `/api/auth/magic-link/*`, `POST /api/ai/chat` (`app/aichat.py`), Schwärzung von Geheimnissen in `GET /api/settings` (vorher las jedes angemeldete Konto KI-API-Schlüssel sowie SMTP-, LDAP- und Archiv-Passwörter), Webhook-Tokens nur für Administratoren. Meldungen und Push (`/api/app/notifications`, `/api/app/push`) kommen mit dem nächsten Server-Release.
+
+### Geändert (Umbau auf Compose)
 - **Die native Compose-App aus dem Zweig `native-rewrite` ersetzt die bisherige App.** Beide Zweige hatten unabhängig voneinander den WebView-Wrapper abgelöst: `main` mit einer flacheren Fassung auf Views/XML und vier Bereichen, `native-rewrite` mit der eigentlichen Neuentwicklung — Jetpack Compose, Material 3, Hilt, Retrofit, 65 Kotlin-Dateien, alle neun Server-Screens. Übernommen wurde die Compose-Fassung; sie liegt jetzt unter `android/app/`.
 - Aufbau je Screen: DTO (`@Serializable`) → Retrofit-API → Repository (`safeApiCall` → `UiState`) → `@HiltViewModel` → Screen mit Lade-, Fehler- und Leer-Zustand. Die Seitenleiste bildet die Sidebar des Servers nach und blendet Admin-Einträge anhand der Rolle aus `/api/auth/me` aus.
 - Build umgestellt auf AGP 9 mit Built-in-Kotlin (kein `kotlin.android`-Plugin), Compose-Compiler 2.2.10, KSP statt kapt für Hilt, `android.disallowKotlinSourceSets=false`.
